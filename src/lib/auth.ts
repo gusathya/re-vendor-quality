@@ -1,9 +1,9 @@
 // src/lib/auth.ts
 import NextAuth, { type User } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
-import bcrypt from 'bcryptjs';
 import { getDb } from './db/client';
 import { getUserByEmail, type UserRole } from './db/users';
+import { verifyCredentials } from './auth-credentials';
 
 // The base next-auth `User` type only declares id/name/email/image. We stash our own
 // role/vendorId on the object returned from `authorize`, then read them back out (via
@@ -28,10 +28,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!email || !password) return null;
 
         const user = getUserByEmail(getDb(), email);
-        if (!user) return null;
-
-        const valid = await bcrypt.compare(password, user.passwordHash);
-        if (!valid) return null;
+        const valid = await verifyCredentials(user, password);
+        if (!valid || !user) return null;
 
         const authorized: AuthorizedUser = {
           id: user.id,
