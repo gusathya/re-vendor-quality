@@ -9,6 +9,7 @@ import {
 } from './sop';
 import { createLoadReport, loadNumberExists, insertLoadReadings, getLoadReadingsForReport } from './load-reports';
 import { createManualCheck, getManualChecksForVendor } from './manual-checks';
+import { createStationAlias, getStationAlias, getStationAliasesForVendor } from './station-aliases';
 
 let db: Database.Database;
 
@@ -157,5 +158,48 @@ describe('manual checks', () => {
     const checks = getManualChecksForVendor(db, vendor.id);
     expect(checks).toHaveLength(1);
     expect(checks[0].score).toBe('pass');
+  });
+});
+
+describe('station aliases', () => {
+  it('creates a station alias and reads it back', () => {
+    const vendor = createVendor(db, { name: 'Unique Platers', processName: 'Alkaline Zinc Iron Plating (Barrel)' });
+
+    const alias = createStationAlias(db, {
+      vendorId: vendor.id,
+      stationGroupKey: 'Cascading Rinsing::5',
+      loadReportStationName: 'Cascade Rinse',
+    });
+
+    expect(alias.id).toBeTruthy();
+    expect(getStationAlias(db, vendor.id, 'Cascade Rinse')?.stationGroupKey).toBe('Cascading Rinsing::5');
+    expect(getStationAliasesForVendor(db, vendor.id)).toHaveLength(1);
+  });
+
+  it('is idempotent when creating the same vendor+name alias twice', () => {
+    const vendor = createVendor(db, { name: 'Unique Platers', processName: 'Alkaline Zinc Iron Plating (Barrel)' });
+
+    const first = createStationAlias(db, {
+      vendorId: vendor.id,
+      stationGroupKey: 'Cascading Rinsing::5',
+      loadReportStationName: 'Cascade Rinse',
+    });
+
+    expect(() =>
+      createStationAlias(db, {
+        vendorId: vendor.id,
+        stationGroupKey: 'Cascading Rinsing::5',
+        loadReportStationName: 'Cascade Rinse',
+      }),
+    ).not.toThrow();
+
+    const second = createStationAlias(db, {
+      vendorId: vendor.id,
+      stationGroupKey: 'Cascading Rinsing::5',
+      loadReportStationName: 'Cascade Rinse',
+    });
+
+    expect(second.id).toBe(first.id);
+    expect(getStationAliasesForVendor(db, vendor.id)).toHaveLength(1);
   });
 });
