@@ -6,11 +6,39 @@ import { findAliasForLoadReportStation, type StationAlias } from './station-matc
 import { scoreReading } from './scoring';
 
 /**
+ * Buckets a raw SOP `unit` string into the broad measurement category it represents, so a
+ * load-report reading (Temperature / Dip Time / Act. Current) can be matched to the right
+ * `sop_parameters` row at a station, even though a single station typically has multiple
+ * parameter rows (one per characteristic) sharing the same `stationGroupKey`.
+ *
+ * The SOP's freeform `characteristic` label is NOT reliable for this (real vendor SOPs
+ * mislabel rows — e.g. a temperature spec titled "Concentration (Water)"), but the parsed
+ * `unit` field is, so classification is unit-based rather than name-based.
+ */
+export type UnitCategory = 'temperature' | 'time' | 'current' | 'other';
+
+function normalizeUnit(unit: string): string {
+  return unit.toUpperCase().replace(/\./g, '').trim();
+}
+
+export function classifyUnit(unit: string | null): UnitCategory {
+  if (!unit) return 'other';
+  const normalized = normalizeUnit(unit);
+  if (normalized === '°C' || normalized === 'C') return 'temperature';
+  if (normalized === 'SEC' || normalized === 'MIN' || normalized === 'HRS') return 'time';
+  if (normalized === 'AMP' || normalized === 'AMP/KG') return 'current';
+  return 'other';
+}
+
+/**
  * Pure function: turns a parsed load report's station readings into scored rows ready
- * for `insertLoadReadings`. A station is matched to its SOP parameter via the vendor's
- * station aliases (load-report station name -> SOP station group key); unmatched
- * stations still produce readings, just with a null `sopParameterId` and an 'unscored'
- * result (there's no limit to score against).
+ * for `insertLoadReadings`. A station is matched to its SOP parameters via the vendor's
+ * station aliases (load-report station name -> SOP station group key). A single station
+ * group key can span multiple SOP parameter rows (one per characteristic), so within a
+ * matched station the right row is selected by unit category (temperature/time/current)
+ * to match the kind of reading being scored. Unmatched stations, and stations with no
+ * parameter row of the needed unit category, still produce readings, just with a null
+ * `sopParameterId` and an 'unscored' result (there's no limit to score against).
  *
  * Temperature and Dip Time are always emitted (one row each per station reading, even
  * when the value itself is null/unmatched) so every station shows up in the report.
@@ -21,42 +49,60 @@ export function buildLoadReadings(
   activeParams: SopParameter[],
   aliases: StationAlias[],
 ): LoadReadingInput[] {
-  const paramsByGroupKey = new Map(activeParams.map((p) => [p.stationGroupKey, p]));
+  const paramsByGroupKey = new Map<string, SopParameter[]>();
+  for (const p of activeParams) {
+    const list = paramsByGroupKey.get(p.stationGroupKey);
+    if (list) {
+      list.push(p);
+    } else {
+      paramsByGroupKey.set(p.stationGroupKey, [p]);
+    }
+  }
+
+  const findParam = (stationGroupKey: string | undefined, category: UnitCategory): SopParameter | null => {
+    if (!stationGroupKey) return null;
+    const candidates = paramsByGroupKey.get(stationGroupKey);
+    if (!candidates) return null;
+    return candidates.find((p) => classifyUnit(p.unit) === category) ?? null;
+  };
+
   const result: LoadReadingInput[] = [];
 
   for (const reading of readings) {
     const alias = findAliasForLoadReportStation(aliases, reading.stationName);
-    const param = alias ? (paramsByGroupKey.get(alias.stationGroupKey) ?? null) : null;
+    const tempParam = findParam(alias?.stationGroupKey, 'temperature');
+    const timeParam = findParam(alias?.stationGroupKey, 'time');
+    const currentParam = findParam(alias?.stationGroupKey, 'current');
 
     result.push({
-      sopParameterId: param?.id ?? null,
+      sopParameterId: tempParam?.id ?? null,
       stationNo: reading.stationNo,
       stationName: reading.stationName,
       parameterName: 'Temperature',
       value: reading.temperatureC,
       dipTimeSeconds: reading.dipTimeSeconds,
-      score: scoreReading(reading.temperatureC, param?.minValue ?? null, param?.maxValue ?? null),
+      score: scoreReading(reading.temperatureC, tempParam?.minValue ?? null, tempParam?.maxValue ?? null),
     });
 
     result.push({
-      sopParameterId: null,
+      sopParameterId: timeParam?.id ?? null,
       stationNo: reading.stationNo,
       stationName: reading.stationName,
       parameterName: 'Dip Time',
       value: reading.dipTimeSeconds,
       dipTimeSeconds: reading.dipTimeSeconds,
-      score: 'unscored',
+      score: scoreReading(reading.dipTimeSeconds, timeParam?.minValue ?? null, timeParam?.maxValue ?? null),
     });
 
     if (reading.actualCurrentAmp !== null) {
       result.push({
-        sopParameterId: param?.id ?? null,
+        sopParameterId: currentParam?.id ?? null,
         stationNo: reading.stationNo,
         stationName: reading.stationName,
         parameterName: 'Act. Current',
         value: reading.actualCurrentAmp,
         dipTimeSeconds: reading.dipTimeSeconds,
-        score: scoreReading(reading.actualCurrentAmp, param?.minValue ?? null, param?.maxValue ?? null),
+        score: scoreReading(reading.actualCurrentAmp, currentParam?.minValue ?? null, currentParam?.maxValue ?? null),
       });
     }
   }
