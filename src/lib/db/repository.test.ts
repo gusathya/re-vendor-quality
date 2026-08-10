@@ -9,7 +9,7 @@ import {
 } from './sop';
 import { createLoadReport, loadNumberExists, insertLoadReadings, getLoadReadingsForReport } from './load-reports';
 import { createManualCheck, getManualChecksForVendor } from './manual-checks';
-import { createStationAlias, getStationAlias, getStationAliasesForVendor } from './station-aliases';
+import { createStationAlias, upsertStationAlias, getStationAlias, getStationAliasesForVendor } from './station-aliases';
 
 let db: Database.Database;
 
@@ -200,6 +200,40 @@ describe('station aliases', () => {
     });
 
     expect(second.id).toBe(first.id);
+    expect(getStationAliasesForVendor(db, vendor.id)).toHaveLength(1);
+  });
+
+  it('upserts a new alias and reads it back', () => {
+    const vendor = createVendor(db, { name: 'Unique Platers', processName: 'Alkaline Zinc Iron Plating (Barrel)' });
+
+    const alias = upsertStationAlias(db, {
+      vendorId: vendor.id,
+      stationGroupKey: 'Cascading Rinsing::5',
+      loadReportStationName: 'Cascade Rinse',
+    });
+
+    expect(alias.id).toBeTruthy();
+    expect(getStationAlias(db, vendor.id, 'Cascade Rinse')?.stationGroupKey).toBe('Cascading Rinsing::5');
+    expect(getStationAliasesForVendor(db, vendor.id)).toHaveLength(1);
+  });
+
+  it('remaps an existing alias to a different station group key in place, without creating a duplicate', () => {
+    const vendor = createVendor(db, { name: 'Unique Platers', processName: 'Alkaline Zinc Iron Plating (Barrel)' });
+
+    const first = upsertStationAlias(db, {
+      vendorId: vendor.id,
+      stationGroupKey: 'Cascading Rinsing::5',
+      loadReportStationName: 'Cascade Rinse',
+    });
+
+    const second = upsertStationAlias(db, {
+      vendorId: vendor.id,
+      stationGroupKey: 'Hot Water Rinsing::2',
+      loadReportStationName: 'Cascade Rinse',
+    });
+
+    expect(second.id).toBe(first.id);
+    expect(getStationAlias(db, vendor.id, 'Cascade Rinse')?.stationGroupKey).toBe('Hot Water Rinsing::2');
     expect(getStationAliasesForVendor(db, vendor.id)).toHaveLength(1);
   });
 });

@@ -21,8 +21,8 @@ export async function updateSopParameter(
 // name should map to, so this needs upsert-on-conflict semantics rather than the
 // insert-only behavior `createStationAlias` provides (that function is deliberately a
 // no-op on conflict, for the seed script's idempotent re-runs). `upsertStationAlias`
-// (added alongside `createStationAlias` in the station-aliases repository) already
-// implements exactly this: update in place if the pair exists, insert otherwise.
+// (in the station-aliases repository) implements exactly this: update in place if the
+// pair exists, insert otherwise.
 export async function setStationAlias(vendorId: string, stationGroupKeyValue: string, loadReportStationName: string) {
   upsertStationAlias(getDb(), {
     vendorId,
