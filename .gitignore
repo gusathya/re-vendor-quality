@@ -1,0 +1,25 @@
+# brainstorming companion scratch files
+.superpowers/
+
+# vendor SOP/data files (real client data, kept out of git)
+Clients/
+
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# env files
+.env*
+!.env.example
+
+# misc
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
+data/
