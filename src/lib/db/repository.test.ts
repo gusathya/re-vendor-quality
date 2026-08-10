@@ -5,7 +5,7 @@ import { createVendor, getVendorByName } from './vendors';
 import { createUser, getUserByEmail } from './users';
 import {
   createDraftSopDocument, insertSopParameters, activateSopDocument,
-  getActiveSopParameters, getSopParametersByDocument,
+  getActiveSopParameters, getSopParametersByDocument, updateSopParameterLimits,
 } from './sop';
 import { createLoadReport, loadNumberExists, insertLoadReadings, getLoadReadingsForReport } from './load-reports';
 import { createManualCheck, getManualChecksForVendor } from './manual-checks';
@@ -93,6 +93,57 @@ describe('SOP draft -> review -> activation', () => {
     expect(docAStatus.status).toBe('active');
     expect(getActiveSopParameters(db, vendorA.id)).toHaveLength(1);
     expect(getActiveSopParameters(db, vendorB.id)).toHaveLength(0);
+  });
+});
+
+describe('updateSopParameterLimits', () => {
+  function insertOneParam(db: Database.Database) {
+    const vendor = createVendor(db, { name: 'Unique Platers', processName: 'Alkaline Zinc Iron Plating (Barrel)' });
+    const admin = createUser(db, { email: 'admin@lf.local', passwordHash: 'hash', role: 'admin', vendorId: null });
+    const draft = createDraftSopDocument(db, { vendorId: vendor.id, filePath: '/x/sop.xlsx', uploadedBy: admin.id });
+    const [param] = insertSopParameters(db, draft.id, [
+      {
+        stationGroupKey: 'k1', srNo: '1', stationNo: '1', process: 'P', productChemical: null,
+        characteristic: null, minValue: null, maxValue: null, unit: null, status: 'needs_review',
+        rawControlLimit: null, rawSpecLimit: null,
+      },
+    ]);
+    return { draft, param };
+  }
+
+  it('sets both min and max and marks the row parsed', () => {
+    const { draft, param } = insertOneParam(db);
+
+    updateSopParameterLimits(db, param.id, 50, 70, '°C');
+
+    const [updated] = getSopParametersByDocument(db, draft.id);
+    expect(updated.minValue).toBe(50);
+    expect(updated.maxValue).toBe(70);
+    expect(updated.unit).toBe('°C');
+    expect(updated.status).toBe('parsed');
+  });
+
+  it('marks a row no_limit (not needs_review) when a reviewer clears both min and max', () => {
+    const { draft, param } = insertOneParam(db);
+    updateSopParameterLimits(db, param.id, 50, 70, '°C');
+
+    updateSopParameterLimits(db, param.id, null, null, '°C');
+
+    const [updated] = getSopParametersByDocument(db, draft.id);
+    expect(updated.minValue).toBeNull();
+    expect(updated.maxValue).toBeNull();
+    expect(updated.status).toBe('no_limit');
+  });
+
+  it('treats a NaN min as null instead of writing NaN to the database', () => {
+    const { draft, param } = insertOneParam(db);
+
+    updateSopParameterLimits(db, param.id, NaN, null, null);
+
+    const [updated] = getSopParametersByDocument(db, draft.id);
+    expect(updated.minValue).toBeNull();
+    expect(updated.maxValue).toBeNull();
+    expect(updated.status).toBe('no_limit');
   });
 });
 

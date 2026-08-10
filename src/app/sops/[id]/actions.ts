@@ -1,7 +1,9 @@
 'use server';
 
 import { getDb } from '@/lib/db/client';
-import { activateSopDocument, getSopParametersByDocument, type SopParameter } from '@/lib/db/sop';
+import {
+  activateSopDocument, getSopParametersByDocument, updateSopParameterLimits, type SopParameter,
+} from '@/lib/db/sop';
 import { upsertStationAlias } from '@/lib/db/station-aliases';
 import { revalidatePath } from 'next/cache';
 
@@ -11,9 +13,7 @@ export async function updateSopParameter(
   maxValue: number | null,
   unit: string | null,
 ) {
-  getDb()
-    .prepare('UPDATE sop_parameters SET min_value = ?, max_value = ?, unit = ?, status = ? WHERE id = ?')
-    .run(minValue, maxValue, unit, minValue !== null || maxValue !== null ? 'parsed' : 'needs_review', id);
+  updateSopParameterLimits(getDb(), id, minValue, maxValue, unit);
 }
 
 // `station_aliases` has a UNIQUE (vendor_id, load_report_station_name) constraint. A

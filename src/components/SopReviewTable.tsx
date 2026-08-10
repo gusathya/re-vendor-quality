@@ -64,6 +64,8 @@ export function SopReviewTable({
             <td>{row.status}</td>
             <td>
               <input
+                type="number"
+                step="any"
                 value={row.minValue ?? ''}
                 onChange={(e) => handleChange(row.id, 'minValue', e.target.value)}
                 onBlur={() => handleSave(row)}
@@ -71,6 +73,8 @@ export function SopReviewTable({
             </td>
             <td>
               <input
+                type="number"
+                step="any"
                 value={row.maxValue ?? ''}
                 onChange={(e) => handleChange(row.id, 'maxValue', e.target.value)}
                 onBlur={() => handleSave(row)}

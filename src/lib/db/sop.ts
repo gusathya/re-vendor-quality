@@ -76,6 +76,21 @@ export function getSopParametersByDocument(db: Database.Database, sopDocumentId:
     .all(sopDocumentId) as SopParameter[];
 }
 
+export function updateSopParameterLimits(
+  db: Database.Database,
+  id: string,
+  minValue: number | null,
+  maxValue: number | null,
+  unit: string | null,
+): void {
+  const effectiveMin = minValue === null || Number.isNaN(minValue) ? null : minValue;
+  const effectiveMax = maxValue === null || Number.isNaN(maxValue) ? null : maxValue;
+  const status: LimitStatus = effectiveMin === null && effectiveMax === null ? 'no_limit' : 'parsed';
+  db.prepare('UPDATE sop_parameters SET min_value = ?, max_value = ?, unit = ?, status = ? WHERE id = ?').run(
+    effectiveMin, effectiveMax, unit, status, id,
+  );
+}
+
 export function activateSopDocument(db: Database.Database, sopDocumentId: string, vendorId: string): void {
   const run = db.transaction(() => {
     db.prepare(
