@@ -5,7 +5,7 @@ import { createVendor, getVendorByName } from './vendors';
 import { createUser, getUserByEmail } from './users';
 import {
   createDraftSopDocument, insertSopParameters, activateSopDocument,
-  getActiveSopParameters, getSopParametersByDocument, updateSopParameterLimits,
+  getActiveSopParameters, getSopParametersByDocument, getSopParameterById, updateSopParameterLimits,
 } from './sop';
 import { createLoadReport, loadNumberExists, insertLoadReadings, getLoadReadingsForReport } from './load-reports';
 import { createManualCheck, getManualChecksForVendor } from './manual-checks';
@@ -93,6 +93,31 @@ describe('SOP draft -> review -> activation', () => {
     expect(docAStatus.status).toBe('active');
     expect(getActiveSopParameters(db, vendorA.id)).toHaveLength(1);
     expect(getActiveSopParameters(db, vendorB.id)).toHaveLength(0);
+  });
+});
+
+describe('getSopParameterById', () => {
+  it('returns a single parameter by id, with limits intact', () => {
+    const vendor = createVendor(db, { name: 'Unique Platers', processName: 'Alkaline Zinc Iron Plating (Barrel)' });
+    const admin = createUser(db, { email: 'admin@lf.local', passwordHash: 'hash', role: 'admin', vendorId: null });
+    const draft = createDraftSopDocument(db, { vendorId: vendor.id, filePath: '/x/sop.xlsx', uploadedBy: admin.id });
+    const [param] = insertSopParameters(db, draft.id, [
+      {
+        stationGroupKey: 'Hot Water Rinsing::2', srNo: '3', stationNo: '2', process: 'Hot Water Rinsing',
+        productChemical: 'Water', characteristic: 'Concentration (Water)',
+        minValue: 50, maxValue: 70, unit: '°C', status: 'parsed',
+        rawControlLimit: '50 – 70°C', rawSpecLimit: '50°C minimum',
+      },
+    ]);
+
+    const found = getSopParameterById(db, param.id);
+    expect(found?.id).toBe(param.id);
+    expect(found?.minValue).toBe(50);
+    expect(found?.maxValue).toBe(70);
+  });
+
+  it('returns null for an unknown id', () => {
+    expect(getSopParameterById(db, 'does-not-exist')).toBeNull();
   });
 });
 

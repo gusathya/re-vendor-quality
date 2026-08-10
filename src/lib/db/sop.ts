@@ -64,6 +64,19 @@ export function insertSopParameters(
   return inserted;
 }
 
+export function getSopParameterById(db: Database.Database, id: string): SopParameter | null {
+  const row = db
+    .prepare(
+      `SELECT id, sop_document_id AS sopDocumentId, station_group_key AS stationGroupKey, sr_no AS srNo,
+              station_no AS stationNo, process, product_chemical AS productChemical, characteristic,
+              min_value AS minValue, max_value AS maxValue, unit, status,
+              raw_control_limit AS rawControlLimit, raw_spec_limit AS rawSpecLimit
+       FROM sop_parameters WHERE id = ?`,
+    )
+    .get(id) as SopParameter | undefined;
+  return row ?? null;
+}
+
 export function getSopParametersByDocument(db: Database.Database, sopDocumentId: string): SopParameter[] {
   return db
     .prepare(
