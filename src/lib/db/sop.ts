@@ -81,9 +81,14 @@ export function activateSopDocument(db: Database.Database, sopDocumentId: string
     db.prepare(
       "UPDATE sop_documents SET status = 'superseded' WHERE vendor_id = ? AND status = 'active'",
     ).run(vendorId);
-    db.prepare(
-      "UPDATE sop_documents SET status = 'active', activated_at = datetime('now') WHERE id = ?",
-    ).run(sopDocumentId);
+    const result = db
+      .prepare(
+        "UPDATE sop_documents SET status = 'active', activated_at = datetime('now') WHERE id = ? AND vendor_id = ?",
+      )
+      .run(sopDocumentId, vendorId);
+    if (result.changes === 0) {
+      throw new Error(`Cannot activate SOP document ${sopDocumentId}: it does not belong to vendor ${vendorId}`);
+    }
   });
   run();
 }

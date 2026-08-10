@@ -72,6 +72,27 @@ describe('SOP draft -> review -> activation', () => {
     expect(active).toHaveLength(1);
     expect(active[0].minValue).toBe(5);
   });
+
+  it('refuses to activate a document that belongs to a different vendor, leaving the original vendor untouched', () => {
+    const vendorA = createVendor(db, { name: 'Unique Platers', processName: 'Alkaline Zinc Iron Plating (Barrel)' });
+    const vendorB = createVendor(db, { name: 'Other Platers', processName: 'Alkaline Zinc Iron Plating (Barrel)' });
+    const admin = createUser(db, { email: 'admin@lf.local', passwordHash: 'hash', role: 'admin', vendorId: null });
+
+    const docA = createDraftSopDocument(db, { vendorId: vendorA.id, filePath: '/x/sop-a.xlsx', uploadedBy: admin.id });
+    insertSopParameters(db, docA.id, [
+      { stationGroupKey: 'k1', srNo: '3', stationNo: '2', process: 'P', productChemical: null, characteristic: null, minValue: 1, maxValue: 2, unit: null, status: 'parsed', rawControlLimit: 'x', rawSpecLimit: null },
+    ]);
+    activateSopDocument(db, docA.id, vendorA.id);
+
+    expect(() => activateSopDocument(db, docA.id, vendorB.id)).toThrow(
+      `Cannot activate SOP document ${docA.id}: it does not belong to vendor ${vendorB.id}`,
+    );
+
+    const docAStatus = db.prepare('SELECT status FROM sop_documents WHERE id = ?').get(docA.id) as { status: string };
+    expect(docAStatus.status).toBe('active');
+    expect(getActiveSopParameters(db, vendorA.id)).toHaveLength(1);
+    expect(getActiveSopParameters(db, vendorB.id)).toHaveLength(0);
+  });
 });
 
 describe('load reports', () => {
