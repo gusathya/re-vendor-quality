@@ -22,7 +22,7 @@ const KNOWN_UNITS = new Set([
   'GM/LIT', 'ML/LIT', 'ML/AMP-HR', 'AMP/KG', 'LIT/MIN',
 ]);
 
-function normalizeUnitForLookup(unit: string): string {
+export function normalizeUnitForLookup(unit: string): string {
   return unit.toUpperCase().replace(/\./g, '');
 }
 

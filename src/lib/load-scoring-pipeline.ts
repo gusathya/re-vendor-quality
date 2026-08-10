@@ -2,6 +2,7 @@
 import type { StationReading } from './parsers/load-report-parser';
 import type { SopParameter } from './db/sop';
 import type { LoadReadingInput } from './db/load-reports';
+import { normalizeUnitForLookup } from './parsers/sop-limit-parser';
 import { findAliasForLoadReportStation, type StationAlias } from './station-matching';
 import { scoreReading } from './scoring';
 
@@ -17,13 +18,9 @@ import { scoreReading } from './scoring';
  */
 export type UnitCategory = 'temperature' | 'time' | 'current' | 'other';
 
-function normalizeUnit(unit: string): string {
-  return unit.toUpperCase().replace(/\./g, '').trim();
-}
-
 export function classifyUnit(unit: string | null): UnitCategory {
   if (!unit) return 'other';
-  const normalized = normalizeUnit(unit);
+  const normalized = normalizeUnitForLookup(unit).trim();
   if (normalized === '°C' || normalized === 'C') return 'temperature';
   if (normalized === 'SEC' || normalized === 'MIN' || normalized === 'HRS') return 'time';
   if (normalized === 'AMP' || normalized === 'AMP/KG') return 'current';
@@ -63,7 +60,13 @@ export function buildLoadReadings(
     if (!stationGroupKey) return null;
     const candidates = paramsByGroupKey.get(stationGroupKey);
     if (!candidates) return null;
-    return candidates.find((p) => classifyUnit(p.unit) === category) ?? null;
+    const matches = candidates.filter((p) => classifyUnit(p.unit) === category);
+    if (matches.length > 1) {
+      console.warn(
+        `Ambiguous SOP parameter match: station "${stationGroupKey}" has ${matches.length} parameters in the "${category}" unit category; using the first match (id=${matches[0].id}).`,
+      );
+    }
+    return matches[0] ?? null;
   };
 
   const result: LoadReadingInput[] = [];

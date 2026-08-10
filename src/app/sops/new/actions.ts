@@ -7,6 +7,7 @@ import { getDb } from '@/lib/db/client';
 import { createDraftSopDocument, insertSopParameters } from '@/lib/db/sop';
 import { getVendorByName } from '@/lib/db/vendors';
 import { parseSopWorkbook } from '@/lib/parsers/sop-parser';
+import { safeUploadFilename } from '@/lib/safe-filename';
 import { stationGroupKey } from '@/lib/station-matching';
 import { redirect } from 'next/navigation';
 
@@ -28,7 +29,7 @@ export async function uploadSop(formData: FormData) {
 
   const uploadDir = path.resolve('./Clients', vendorName, 'SOP');
   await mkdir(uploadDir, { recursive: true });
-  const filePath = path.join(uploadDir, `${Date.now()}-${file.name}`);
+  const filePath = path.join(uploadDir, safeUploadFilename(file.name));
   await writeFile(filePath, buffer);
 
   const doc = createDraftSopDocument(db, { vendorId: vendor.id, filePath, uploadedBy: session.user.id });

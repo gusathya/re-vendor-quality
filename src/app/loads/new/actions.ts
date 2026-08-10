@@ -10,6 +10,7 @@ import { getVendorByName } from '@/lib/db/vendors';
 import { getStationAliasesForVendor } from '@/lib/db/station-aliases';
 import { parseLoadReportWorkbook } from '@/lib/parsers/load-report-parser';
 import { buildLoadReadings } from '@/lib/load-scoring-pipeline';
+import { safeUploadFilename } from '@/lib/safe-filename';
 import { redirect } from 'next/navigation';
 
 export async function uploadLoadReport(formData: FormData) {
@@ -41,7 +42,7 @@ export async function uploadLoadReport(formData: FormData) {
 
   const uploadDir = path.resolve('./Clients', vendorName, 'Uploads');
   await mkdir(uploadDir, { recursive: true });
-  const filePath = path.join(uploadDir, `${Date.now()}-${file.name}`);
+  const filePath = path.join(uploadDir, safeUploadFilename(file.name));
   await writeFile(filePath, buffer);
 
   const report = createLoadReport(db, {

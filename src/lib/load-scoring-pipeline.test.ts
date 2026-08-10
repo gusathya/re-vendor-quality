@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { buildLoadReadings } from './load-scoring-pipeline';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { buildLoadReadings, classifyUnit } from './load-scoring-pipeline';
 import type { StationReading } from './parsers/load-report-parser';
 import type { SopParameter } from './db/sop';
 import type { StationAlias } from './station-matching';
@@ -22,6 +22,36 @@ function reading(overrides: Partial<StationReading>): StationReading {
     ...overrides,
   };
 }
+
+describe('classifyUnit', () => {
+  it('classifies °C as temperature', () => {
+    expect(classifyUnit('°C')).toBe('temperature');
+  });
+
+  it('classifies "Sec" as time', () => {
+    expect(classifyUnit('Sec')).toBe('time');
+  });
+
+  it('classifies "Hrs." as time (trailing dot stripped)', () => {
+    expect(classifyUnit('Hrs.')).toBe('time');
+  });
+
+  it('classifies "AMP" as current', () => {
+    expect(classifyUnit('AMP')).toBe('current');
+  });
+
+  it('classifies "amp/kg" as current (case-insensitive)', () => {
+    expect(classifyUnit('amp/kg')).toBe('current');
+  });
+
+  it('classifies an unrecognized unit as other', () => {
+    expect(classifyUnit('gm/lit')).toBe('other');
+  });
+
+  it('classifies null as other', () => {
+    expect(classifyUnit(null)).toBe('other');
+  });
+});
 
 describe('buildLoadReadings', () => {
   it('matches a station via alias and scores its temperature against the SOP limit', () => {
@@ -106,5 +136,30 @@ describe('buildLoadReadings', () => {
     const readings = buildLoadReadings([reading({})], [sopParam], aliases);
     const dip = readings.find((r) => r.parameterName === 'Dip Time');
     expect(dip).toMatchObject({ sopParameterId: null, score: 'unscored' });
+  });
+
+  describe('ambiguous match (regression: two SOP rows share a station and unit category)', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('logs a console.warn and still returns the first match when a station has two parameters in the same unit category', () => {
+      const duplicateTempParam: SopParameter = {
+        ...sopParam,
+        id: 'p1-duplicate',
+        characteristic: 'Concentration (Water) duplicate',
+      };
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const readings = buildLoadReadings([reading({})], [sopParam, duplicateTempParam], aliases);
+
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      const [message] = warnSpy.mock.calls[0];
+      expect(message).toContain(sopParam.stationGroupKey);
+      expect(message).toContain('temperature');
+
+      const temp = readings.find((r) => r.parameterName === 'Temperature');
+      expect(temp).toMatchObject({ sopParameterId: 'p1' });
+    });
   });
 });
