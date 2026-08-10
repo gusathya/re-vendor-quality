@@ -26,8 +26,9 @@ describe('findAliasForLoadReportStation', () => {
     expect(found?.stationGroupKey).toBe('Hot Water Rinsing::2');
   });
 
-  it('matches the plating station despite its double-spaced load report name', () => {
-    const found = findAliasForLoadReportStation(aliases, 'Zinc Iron  plating 2');
+  it('matches despite whitespace differences between the stored alias and the lookup name', () => {
+    // Stored alias has a double space (as observed in real load reports); lookup uses a single space.
+    const found = findAliasForLoadReportStation(aliases, 'Zinc Iron plating 2');
     expect(found?.stationGroupKey).toBe('Alkaline Zinc Iron Plating (Barrel)::');
   });
 
