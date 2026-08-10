@@ -2,10 +2,12 @@ import { stationGroupKey, type StationAlias } from './station-matching';
 
 /**
  * Seed aliases for Unique Platers, confirmed by inspecting the real SOP and the real
- * 2025-08-18_003 load report side by side. "Cascade Rinse" appears many times in the load
- * report at different station numbers for different SOP rinse steps — each is seeded
- * separately below because the SOP station numbers (5,6,8,9,11,12,15,16,18,19,28,29) line up
- * 1:1 with the load report's numbers for the pre-plating section of the line.
+ * 2025-08-18_003 load report side by side. "Cascade Rinse" is the load-report name for
+ * ~12 distinct physical stations (SOP station numbers 5,6,8,9,11,12,15,16,18,19,28,29).
+ * Matching is by name only, so only one alias is seeded here (station 5) and every
+ * "Cascade Rinse" row in a load report resolves to it — a known, intentional MVP
+ * limitation, not an omission. Task 13's SOP review UI should surface this so a reviewer
+ * knows the other 11 occurrences aren't independently scored.
  */
 export const KNOWN_UNIQUE_PLATERS_ALIASES: StationAlias[] = [
   { vendorId: 'unique-platers', stationGroupKey: stationGroupKey('Hot Water Rinsing', '2'), loadReportStationName: 'Hot Water Rinse' },
