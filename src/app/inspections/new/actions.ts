@@ -2,7 +2,7 @@
 
 import { auth } from '@/lib/auth';
 import { getDb } from '@/lib/db/client';
-import { getSopParameterById } from '@/lib/db/sop';
+import { getSopParameterForVendor } from '@/lib/db/sop';
 import { createManualCheck } from '@/lib/db/manual-checks';
 import { scoreReading } from '@/lib/scoring';
 import { redirect } from 'next/navigation';
@@ -15,8 +15,8 @@ export async function submitManualCheck(formData: FormData) {
   const value = Number(formData.get('value'));
 
   const db = getDb();
-  const param = getSopParameterById(db, sopParameterId);
-  if (!param) throw new Error('Unknown SOP parameter');
+  const param = getSopParameterForVendor(db, sopParameterId, session.user.vendorId);
+  if (!param) throw new Error('Unknown SOP parameter for this vendor');
 
   const score = scoreReading(value, param.minValue, param.maxValue);
   if (score === 'unscored') throw new Error('This parameter has no usable limit to check against yet');

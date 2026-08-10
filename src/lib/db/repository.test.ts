@@ -5,7 +5,8 @@ import { createVendor, getVendorByName } from './vendors';
 import { createUser, getUserByEmail } from './users';
 import {
   createDraftSopDocument, insertSopParameters, activateSopDocument,
-  getActiveSopParameters, getSopParametersByDocument, getSopParameterById, updateSopParameterLimits,
+  getActiveSopParameters, getSopParametersByDocument, getSopParameterById, getSopParameterForVendor,
+  updateSopParameterLimits,
 } from './sop';
 import { createLoadReport, loadNumberExists, insertLoadReadings, getLoadReadingsForReport } from './load-reports';
 import { createManualCheck, getManualChecksForVendor } from './manual-checks';
@@ -118,6 +119,32 @@ describe('getSopParameterById', () => {
 
   it('returns null for an unknown id', () => {
     expect(getSopParameterById(db, 'does-not-exist')).toBeNull();
+  });
+});
+
+describe('getSopParameterForVendor', () => {
+  it('finds a parameter when queried with its own vendor, and returns null for a different vendor', () => {
+    const vendorA = createVendor(db, { name: 'Unique Platers', processName: 'Alkaline Zinc Iron Plating (Barrel)' });
+    const vendorB = createVendor(db, { name: 'Other Platers', processName: 'Alkaline Zinc Iron Plating (Barrel)' });
+    const admin = createUser(db, { email: 'admin@lf.local', passwordHash: 'hash', role: 'admin', vendorId: null });
+
+    const docA = createDraftSopDocument(db, { vendorId: vendorA.id, filePath: '/x/sop-a.xlsx', uploadedBy: admin.id });
+    const [paramA] = insertSopParameters(db, docA.id, [
+      { stationGroupKey: 'k1', srNo: '3', stationNo: '2', process: 'P', productChemical: null, characteristic: null, minValue: 1, maxValue: 2, unit: null, status: 'parsed', rawControlLimit: 'x', rawSpecLimit: null },
+    ]);
+    activateSopDocument(db, docA.id, vendorA.id);
+
+    const docB = createDraftSopDocument(db, { vendorId: vendorB.id, filePath: '/x/sop-b.xlsx', uploadedBy: admin.id });
+    insertSopParameters(db, docB.id, [
+      { stationGroupKey: 'k1', srNo: '3', stationNo: '2', process: 'P', productChemical: null, characteristic: null, minValue: 5, maxValue: 6, unit: null, status: 'parsed', rawControlLimit: 'y', rawSpecLimit: null },
+    ]);
+    activateSopDocument(db, docB.id, vendorB.id);
+
+    const found = getSopParameterForVendor(db, paramA.id, vendorA.id);
+    expect(found?.id).toBe(paramA.id);
+    expect(found?.minValue).toBe(1);
+
+    expect(getSopParameterForVendor(db, paramA.id, vendorB.id)).toBeNull();
   });
 });
 

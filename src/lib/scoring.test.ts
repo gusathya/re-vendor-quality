@@ -45,4 +45,20 @@ describe('scoreReading', () => {
   it('is unscored when there is no limit to check against', () => {
     expect(scoreReading(55, null, null)).toBe('unscored');
   });
+
+  it('is unscored (not a false pass) when the reading value is NaN, with both min and max set', () => {
+    expect(scoreReading(NaN, 50, 70)).toBe('unscored');
+  });
+
+  it('is unscored (not a false pass) when the reading value is NaN, with only a min limit', () => {
+    expect(scoreReading(NaN, 50, null)).toBe('unscored');
+  });
+
+  it('is unscored (not a false pass) when the reading value is NaN, with only a max limit', () => {
+    expect(scoreReading(NaN, null, 12)).toBe('unscored');
+  });
+
+  it('is unscored when the reading value is NaN and there is no limit either', () => {
+    expect(scoreReading(NaN, null, null)).toBe('unscored');
+  });
 });

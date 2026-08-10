@@ -77,6 +77,21 @@ export function getSopParameterById(db: Database.Database, id: string): SopParam
   return row ?? null;
 }
 
+export function getSopParameterForVendor(db: Database.Database, id: string, vendorId: string): SopParameter | null {
+  const row = db
+    .prepare(
+      `SELECT p.id, p.sop_document_id AS sopDocumentId, p.station_group_key AS stationGroupKey, p.sr_no AS srNo,
+              p.station_no AS stationNo, p.process, p.product_chemical AS productChemical, p.characteristic,
+              p.min_value AS minValue, p.max_value AS maxValue, p.unit, p.status,
+              p.raw_control_limit AS rawControlLimit, p.raw_spec_limit AS rawSpecLimit
+       FROM sop_parameters p
+       JOIN sop_documents d ON d.id = p.sop_document_id
+       WHERE p.id = ? AND d.vendor_id = ?`,
+    )
+    .get(id, vendorId) as SopParameter | undefined;
+  return row ?? null;
+}
+
 export function getSopParametersByDocument(db: Database.Database, sopDocumentId: string): SopParameter[] {
   return db
     .prepare(
