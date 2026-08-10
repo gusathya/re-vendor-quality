@@ -58,6 +58,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     session({ session, token }) {
+      // `token.sub` is set automatically by Auth.js from the `id` returned by
+      // `authorize()` (via the internal jwt handling that runs before our `jwt`
+      // callback above). The `Session.user` type declares `id: string` (see
+      // src/types/next-auth.d.ts), but nothing previously copied it from the token
+      // onto the session object, so `session.user.id` was silently `undefined` at
+      // runtime. Task 13's SOP upload action is the first caller that reads
+      // `session.user.id` (as `uploaded_by`), which is what surfaced this.
+      session.user.id = token.sub as string;
       session.user.role = token.role as UserRole;
       session.user.vendorId = token.vendorId as string | null;
       return session;

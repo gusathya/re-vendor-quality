@@ -27,6 +27,36 @@ export function createStationAlias(
   return { id, ...input };
 }
 
+/**
+ * Insert-or-update: `createStationAlias` above is deliberately a no-op when the
+ * (vendor_id, load_report_station_name) pair already exists, which is what the seed
+ * script needs (idempotent re-runs). The SOP review screen needs the opposite: a
+ * reviewer picking a load-report station name that's already aliased should be able to
+ * remap it to a different SOP station group. This does that update in place instead of
+ * silently keeping the old mapping.
+ */
+export function upsertStationAlias(
+  db: Database.Database,
+  input: { vendorId: string; stationGroupKey: string; loadReportStationName: string },
+): StationAliasRecord {
+  const existing = getStationAlias(db, input.vendorId, input.loadReportStationName);
+  if (existing) {
+    if (existing.stationGroupKey !== input.stationGroupKey) {
+      db.prepare('UPDATE station_aliases SET station_group_key = ? WHERE id = ?').run(
+        input.stationGroupKey,
+        existing.id,
+      );
+    }
+    return { ...existing, stationGroupKey: input.stationGroupKey };
+  }
+
+  const id = randomUUID();
+  db.prepare(
+    'INSERT INTO station_aliases (id, vendor_id, station_group_key, load_report_station_name) VALUES (?, ?, ?, ?)',
+  ).run(id, input.vendorId, input.stationGroupKey, input.loadReportStationName);
+  return { id, ...input };
+}
+
 export function getStationAlias(
   db: Database.Database,
   vendorId: string,
