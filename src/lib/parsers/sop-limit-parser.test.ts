@@ -106,4 +106,34 @@ describe('parseControlLimit', () => {
   it('flags an empty string as no_limit', () => {
     expect(parseControlLimit('').status).toBe('no_limit');
   });
+
+  it('flags an exact value with a unit that is not in KNOWN_UNITS as needs_review', () => {
+    expect(parseControlLimit('5 kg')).toEqual({
+      status: 'needs_review', min: null, max: null, unit: null, prefix: null, target: null, raw: '5 kg',
+    });
+  });
+
+  it('flags free-text containing a digit but matching no pattern as needs_review', () => {
+    expect(parseControlLimit('approx 50')).toEqual({
+      status: 'needs_review', min: null, max: null, unit: null, prefix: null, target: null, raw: 'approx 50',
+    });
+  });
+
+  it('parses a single exact value in GM (weight)', () => {
+    expect(parseControlLimit('250 GM')).toEqual({
+      status: 'parsed', min: 250, max: 250, unit: 'GM', prefix: null, target: 250, raw: '250 GM',
+    });
+  });
+
+  it('parses a single exact value in ml (volume)', () => {
+    expect(parseControlLimit('500 ml')).toEqual({
+      status: 'parsed', min: 500, max: 500, unit: 'ml', prefix: null, target: 500, raw: '500 ml',
+    });
+  });
+
+  it('parses a single exact value in Hrs (duration)', () => {
+    expect(parseControlLimit('48 Hrs')).toEqual({
+      status: 'parsed', min: 48, max: 48, unit: 'Hrs', prefix: null, target: 48, raw: '48 Hrs',
+    });
+  });
 });
