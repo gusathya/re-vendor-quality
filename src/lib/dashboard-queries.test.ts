@@ -4,7 +4,7 @@ import type Database from 'better-sqlite3';
 import { createDb } from './db/client';
 import { createVendor } from './db/vendors';
 import { createUser } from './db/users';
-import { createDraftSopDocument, insertSopParameters, activateSopDocument } from './db/sop';
+import { createDraftSopDocument, insertSopParameters, activateSopDocument, updateSopParameterLimits } from './db/sop';
 import { createLoadReport, insertLoadReadings } from './db/load-reports';
 import {
   getKpis,
@@ -130,5 +130,20 @@ describe('getParameterCapability', () => {
   it('returns null average with zero samples when the parameter has no scored data', () => {
     const capability = getParameterCapability(db, vendorId, 'Nonexistent Parameter');
     expect(capability).toEqual({ parameterName: 'Nonexistent Parameter', sampleCount: 0, avgDistanceFromLimit: null });
+  });
+
+  it('excludes readings whose SOP parameter had its limits cleared after scoring, instead of computing an Infinity distance', () => {
+    // Both fixture readings (39 -> fail, 55 -> pass) reference the same already-active sop_parameters
+    // row (paramId). Clearing that row's bounds in place (as the live SopReviewTable UI allows, even
+    // for an already-scored parameter) must not corrupt the capability average with an unbounded
+    // (Infinity) distance for readings that are no longer scoreable against any limit. Since both
+    // readings share this one parameter, clearing its limits leaves zero legitimately scoreable
+    // readings for 'Temperature'.
+    updateSopParameterLimits(db, paramId, null, null, null);
+
+    const capability = getParameterCapability(db, vendorId, 'Temperature');
+    expect(capability.avgDistanceFromLimit).not.toBe(Infinity);
+    expect(capability.avgDistanceFromLimit).not.toBeNaN();
+    expect(capability).toEqual({ parameterName: 'Temperature', sampleCount: 0, avgDistanceFromLimit: null });
   });
 });

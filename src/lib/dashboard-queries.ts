@@ -161,7 +161,8 @@ export function getParameterCapability(db: Database.Database, vendorId: string, 
        FROM load_readings r
        JOIN load_reports lr ON lr.id = r.load_report_id
        JOIN sop_parameters p ON p.id = r.sop_parameter_id
-       WHERE lr.vendor_id = ? AND r.parameter_name = ? AND r.value IS NOT NULL`,
+       WHERE lr.vendor_id = ? AND r.parameter_name = ? AND r.value IS NOT NULL
+         AND r.score != 'unscored' AND (p.min_value IS NOT NULL OR p.max_value IS NOT NULL)`,
     )
     .all(vendorId, parameterName) as { value: number; minValue: number | null; maxValue: number | null }[];
 
