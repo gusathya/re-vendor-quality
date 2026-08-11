@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 
-const NAV_LINKS = [
+const VENDOR_LINKS = [
   { href: '/', label: 'Dashboard' },
   { href: '/sops', label: 'SOPs' },
   { href: '/loads/new', label: 'Upload Load' },
@@ -12,10 +12,19 @@ const NAV_LINKS = [
   { href: '/settings', label: 'Settings' },
 ];
 
+const ADMIN_LINKS = [
+  { href: '/admin', label: 'Admin Dashboard' },
+  { href: '/sops', label: 'SOPs' },
+  { href: '/loads/new', label: 'Upload Load' },
+  { href: '/settings', label: 'Settings' },
+];
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLoginPage = pathname === '/login';
   const { data: session } = useSession();
+  const role = (session?.user as { role?: string } | undefined)?.role;
+  const navLinks = role === 'admin' ? ADMIN_LINKS : VENDOR_LINKS;
 
   return (
     <>
@@ -60,7 +69,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           height: 46,
           boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
         }}>
-          {NAV_LINKS.map(({ href, label }) => {
+          {navLinks.map(({ href, label }) => {
             const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
             return (
               <Link
