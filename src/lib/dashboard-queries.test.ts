@@ -6,7 +6,15 @@ import { createVendor } from './db/vendors';
 import { createUser } from './db/users';
 import { createDraftSopDocument, insertSopParameters, activateSopDocument } from './db/sop';
 import { createLoadReport, insertLoadReadings } from './db/load-reports';
-import { getKpis, getFilteredReadings, getParameterTrend, getStationHotspots, getParameterHotspots } from './dashboard-queries';
+import {
+  getKpis,
+  getFilteredReadings,
+  getParameterTrend,
+  getStationHotspots,
+  getParameterHotspots,
+  listLoadNumbers,
+  getLoadReadingsByLoadNumber,
+} from './dashboard-queries';
 
 let db: Database.Database;
 let vendorId: string;
@@ -78,5 +86,16 @@ describe('hotspot rankings', () => {
   it('ranks parameters by fail count', () => {
     const params = getParameterHotspots(db, vendorId);
     expect(params[0]).toMatchObject({ parameterName: 'Temperature', failCount: 1 });
+  });
+});
+
+describe('load comparison', () => {
+  it('lists distinct load numbers for a vendor', () => {
+    expect(listLoadNumbers(db, vendorId)).toEqual(['L1']);
+  });
+
+  it('fetches all readings for one load number', () => {
+    const rows = getLoadReadingsByLoadNumber(db, vendorId, 'L1');
+    expect(rows).toHaveLength(2);
   });
 });

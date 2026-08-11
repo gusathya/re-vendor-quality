@@ -124,3 +124,22 @@ export function getParameterHotspots(db: Database.Database, vendorId: string): (
     )
     .all(vendorId) as (HotspotRow & { parameterName: string })[];
 }
+
+export function listLoadNumbers(db: Database.Database, vendorId: string): string[] {
+  return (
+    db
+      .prepare('SELECT DISTINCT load_number AS loadNumber FROM load_reports WHERE vendor_id = ? ORDER BY load_number')
+      .all(vendorId) as { loadNumber: string }[]
+  ).map((r) => r.loadNumber);
+}
+
+export function getLoadReadingsByLoadNumber(db: Database.Database, vendorId: string, loadNumber: string): ReadingRow[] {
+  return db
+    .prepare(
+      `SELECT r.id, r.station_name AS stationName, r.parameter_name AS parameterName, r.value, r.score,
+              lr.load_number AS loadNumber, lr.uploaded_at AS uploadedAt
+       FROM load_readings r JOIN load_reports lr ON lr.id = r.load_report_id
+       WHERE lr.vendor_id = ? AND lr.load_number = ?`,
+    )
+    .all(vendorId, loadNumber) as ReadingRow[];
+}
