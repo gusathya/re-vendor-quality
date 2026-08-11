@@ -1,7 +1,7 @@
 import type Database from 'better-sqlite3';
 import { randomUUID } from 'node:crypto';
 
-export type UserRole = 'admin' | 'vendor';
+export type UserRole = 'admin' | 'vendor' | 'customer';
 
 export interface User {
   id: string;

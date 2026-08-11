@@ -47,6 +47,9 @@ export interface VendorStat {
   vendorId: string;
   vendorName: string;
   processName: string;
+  categoryId: string | null;
+  categoryName: string | null;
+  vendorCode: string | null;
   totalReadings: number;
   passes: number;
   fails: number;
@@ -59,19 +62,23 @@ export function getVendorStats(db: Database.Database): VendorStat[] {
   const rows = db
     .prepare(
       `SELECT
-         v.id            AS vendorId,
-         v.name          AS vendorName,
-         v.process_name  AS processName,
-         COUNT(r.id)     AS totalReadings,
+         v.id              AS vendorId,
+         v.name            AS vendorName,
+         v.process_name    AS processName,
+         v.category_id     AS categoryId,
+         vc.name           AS categoryName,
+         v.vendor_code     AS vendorCode,
+         COUNT(r.id)       AS totalReadings,
          SUM(CASE WHEN r.score = 'pass' THEN 1 ELSE 0 END) AS passes,
          SUM(CASE WHEN r.score = 'fail' THEN 1 ELSE 0 END) AS fails,
          COUNT(DISTINCT lr.id) AS loadCount,
          MAX(lr.uploaded_at)   AS lastUploadAt
        FROM vendors v
+       LEFT JOIN vendor_categories vc ON vc.id = v.category_id
        LEFT JOIN load_reports lr ON lr.vendor_id = v.id
        LEFT JOIN load_readings r ON r.load_report_id = lr.id AND r.score != 'unscored'
        GROUP BY v.id
-       ORDER BY v.name`,
+       ORDER BY vc.name NULLS LAST, v.name`,
     )
     .all() as (Omit<VendorStat, 'passRate'> & { passes: number | null; fails: number | null })[];
 
@@ -126,9 +133,11 @@ export function getCrossVendorParameterFailures(db: Database.Database): CrossVen
 }
 
 export interface AdminTimelinePoint {
+  id: string;
   loadNumber: string;
   vendorName: string;
   uploadedAt: string;
+  pushStatus: string;
   passes: number;
   fails: number;
 }
@@ -137,9 +146,11 @@ export function getAdminTimeline(db: Database.Database): AdminTimelinePoint[] {
   return db
     .prepare(
       `SELECT
-         lr.load_number  AS loadNumber,
-         v.name          AS vendorName,
-         lr.uploaded_at  AS uploadedAt,
+         lr.id            AS id,
+         lr.load_number   AS loadNumber,
+         v.name           AS vendorName,
+         lr.uploaded_at   AS uploadedAt,
+         lr.push_status   AS pushStatus,
          SUM(CASE WHEN r.score = 'pass' THEN 1 ELSE 0 END) AS passes,
          SUM(CASE WHEN r.score = 'fail' THEN 1 ELSE 0 END) AS fails
        FROM load_reports lr
@@ -175,4 +186,91 @@ export function getVendorStationHeatmap(db: Database.Database): VendorStationCel
        ORDER BY r.station_name, v.name`,
     )
     .all() as VendorStationCell[];
+}
+
+/* ── Vendor load list (for vendor's /loads page) ── */
+
+export interface VendorLoad {
+  id: string;
+  loadNumber: string;
+  partNumber: string | null;
+  uploadedAt: string;
+  pushStatus: string;
+  pushedAt: string | null;
+  reviewedAt: string | null;
+  reviewNote: string | null;
+  passes: number;
+  fails: number;
+  total: number;
+}
+
+export function getVendorLoads(db: Database.Database, vendorId: string): VendorLoad[] {
+  return db
+    .prepare(
+      `SELECT
+         lr.id,
+         lr.load_number  AS loadNumber,
+         lr.part_number  AS partNumber,
+         lr.uploaded_at  AS uploadedAt,
+         lr.push_status  AS pushStatus,
+         lr.pushed_at    AS pushedAt,
+         lr.reviewed_at  AS reviewedAt,
+         lr.review_note  AS reviewNote,
+         SUM(CASE WHEN r.score = 'pass' THEN 1 ELSE 0 END)        AS passes,
+         SUM(CASE WHEN r.score = 'fail' THEN 1 ELSE 0 END)        AS fails,
+         COUNT(CASE WHEN r.score != 'unscored' THEN 1 END)        AS total
+       FROM load_reports lr
+       LEFT JOIN load_readings r ON r.load_report_id = lr.id
+       WHERE lr.vendor_id = ?
+       GROUP BY lr.id
+       ORDER BY lr.uploaded_at DESC`,
+    )
+    .all(vendorId) as VendorLoad[];
+}
+
+/* ── Customer portal (pushed loads) ── */
+
+export interface PushedLoad {
+  id: string;
+  loadNumber: string;
+  partNumber: string | null;
+  vendorId: string;
+  vendorName: string;
+  vendorCode: string | null;
+  vendorEmail: string | null;
+  pushStatus: string;
+  pushedAt: string | null;
+  reviewedAt: string | null;
+  reviewNote: string | null;
+  passes: number;
+  fails: number;
+  total: number;
+}
+
+export function getPushedLoads(db: Database.Database): PushedLoad[] {
+  return db
+    .prepare(
+      `SELECT
+         lr.id,
+         lr.load_number  AS loadNumber,
+         lr.part_number  AS partNumber,
+         lr.vendor_id    AS vendorId,
+         v.name          AS vendorName,
+         v.vendor_code   AS vendorCode,
+         (SELECT email FROM users WHERE vendor_id = v.id AND role = 'vendor' LIMIT 1) AS vendorEmail,
+         lr.push_status  AS pushStatus,
+         lr.pushed_at    AS pushedAt,
+         lr.reviewed_at  AS reviewedAt,
+         lr.review_note  AS reviewNote,
+         SUM(CASE WHEN r.score = 'pass' THEN 1 ELSE 0 END)        AS passes,
+         SUM(CASE WHEN r.score = 'fail' THEN 1 ELSE 0 END)        AS fails,
+         COUNT(CASE WHEN r.score != 'unscored' THEN 1 END)        AS total
+       FROM load_reports lr
+       JOIN vendors v ON v.id = lr.vendor_id
+       LEFT JOIN load_readings r ON r.load_report_id = lr.id
+       WHERE lr.push_status != 'draft'
+       GROUP BY lr.id
+       ORDER BY lr.pushed_at DESC, lr.uploaded_at DESC`,
+    )
+    .all() as PushedLoad[];
 }

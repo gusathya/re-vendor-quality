@@ -1,9 +1,10 @@
 // src/lib/seed.ts
 import bcrypt from 'bcryptjs';
 import type Database from 'better-sqlite3';
-import { createVendor, getVendorByName, type Vendor } from './db/vendors';
+import { createVendor, getVendorByName, updateVendorMeta, type Vendor } from './db/vendors';
 import { createUser, getUserByEmail } from './db/users';
 import { createStationAlias } from './db/station-aliases';
+import { createCategory, getCategoryBySlug } from './db/vendor-categories';
 import { KNOWN_UNIQUE_PLATERS_ALIASES } from './known-station-aliases';
 
 export interface SeedResult {
@@ -11,12 +12,41 @@ export interface SeedResult {
   stationAliasCount: number;
 }
 
+const CATEGORIES = [
+  { name: 'Sheet Metal & Fabrication', slug: 'sheet-metal-fabrication' },
+  { name: 'Casting & Machining', slug: 'casting-machining' },
+  { name: 'Forging & Machining', slug: 'forging-machining' },
+  { name: 'Non-Metallic', slug: 'non-metallic' },
+  { name: 'Mechanical Proprietary', slug: 'mechanical-proprietary' },
+  { name: 'Electrical Proprietary', slug: 'electrical-proprietary' },
+];
+
 export async function seed(db: Database.Database): Promise<SeedResult> {
+  // Seed commodity categories (idempotent via slug check)
+  for (const cat of CATEGORIES) {
+    if (!getCategoryBySlug(db, cat.slug)) {
+      createCategory(db, cat);
+    }
+  }
+
+  // Seed vendor
   let vendor = getVendorByName(db, 'Unique Platers');
   if (!vendor) {
     vendor = createVendor(db, { name: 'Unique Platers', processName: 'Alkaline Zinc Iron Plating (Barrel)' });
   }
 
+  // Assign category and vendor code if not already set
+  if (!vendor.vendorCode) {
+    const nonMetallicCat = getCategoryBySlug(db, 'non-metallic');
+    updateVendorMeta(db, vendor.id, {
+      categoryId: nonMetallicCat?.id ?? null,
+      vendorCode: 'UP-001',
+    });
+    // Refresh after update
+    vendor = getVendorByName(db, 'Unique Platers')!;
+  }
+
+  // Seed admin user
   if (!getUserByEmail(db, 'admin@leadership-fractal.local')) {
     createUser(db, {
       email: 'admin@leadership-fractal.local',
@@ -26,12 +56,23 @@ export async function seed(db: Database.Database): Promise<SeedResult> {
     });
   }
 
+  // Seed vendor user
   if (!getUserByEmail(db, 'vendor@unique-platers.local')) {
     createUser(db, {
       email: 'vendor@unique-platers.local',
       passwordHash: await bcrypt.hash('Vendor@123', 10),
       role: 'vendor',
       vendorId: vendor.id,
+    });
+  }
+
+  // Seed customer user (Royal Enfield)
+  if (!getUserByEmail(db, 'customer@royalenfield.local')) {
+    createUser(db, {
+      email: 'customer@royalenfield.local',
+      passwordHash: await bcrypt.hash('Customer@123', 10),
+      role: 'customer',
+      vendorId: null,
     });
   }
 

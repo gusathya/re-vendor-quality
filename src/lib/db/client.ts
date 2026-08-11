@@ -16,8 +16,40 @@ export function createDb(filePath: string): Database.Database {
   const db = new Database(filePath);
   db.pragma('foreign_keys = ON');
   db.exec(readFileSync(SCHEMA_PATH, 'utf-8'));
+
   // Additive column migrations — SQLite throws on duplicate ADD COLUMN, so we suppress that.
   try { db.exec('ALTER TABLE vendors ADD COLUMN folder_url TEXT'); } catch {}
+  try { db.exec('ALTER TABLE vendors ADD COLUMN category_id TEXT REFERENCES vendor_categories(id)'); } catch {}
+  try { db.exec('ALTER TABLE vendors ADD COLUMN vendor_code TEXT'); } catch {}
+
+  // Migrate users table to support the 'customer' role.
+  // SQLite CHECK constraints can't be altered in place, so we recreate the table when needed.
+  const userSql = (db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'").get() as { sql: string } | undefined)?.sql ?? '';
+  if (!userSql.includes("'customer'")) {
+    db.pragma('foreign_keys = OFF');
+    db.exec(`
+      CREATE TABLE users_new (
+        id TEXT PRIMARY KEY,
+        email TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        role TEXT NOT NULL CHECK (role IN ('admin', 'vendor', 'customer')),
+        vendor_id TEXT REFERENCES vendors(id),
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      INSERT INTO users_new SELECT * FROM users;
+      DROP TABLE users;
+      ALTER TABLE users_new RENAME TO users;
+    `);
+    db.pragma('foreign_keys = ON');
+  }
+
+  // Push/approval columns on load_reports.
+  try { db.exec("ALTER TABLE load_reports ADD COLUMN push_status TEXT NOT NULL DEFAULT 'draft'"); } catch {}
+  try { db.exec('ALTER TABLE load_reports ADD COLUMN pushed_at TEXT'); } catch {}
+  try { db.exec('ALTER TABLE load_reports ADD COLUMN reviewed_at TEXT'); } catch {}
+  try { db.exec('ALTER TABLE load_reports ADD COLUMN reviewed_by TEXT'); } catch {}
+  try { db.exec('ALTER TABLE load_reports ADD COLUMN review_note TEXT'); } catch {}
+
   return db;
 }
 

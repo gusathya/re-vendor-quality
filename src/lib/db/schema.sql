@@ -1,9 +1,19 @@
 -- src/lib/db/schema.sql
 
+CREATE TABLE IF NOT EXISTS vendor_categories (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  slug TEXT NOT NULL UNIQUE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS vendors (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
   process_name TEXT NOT NULL,
+  category_id TEXT REFERENCES vendor_categories(id),
+  vendor_code TEXT UNIQUE,
+  folder_url TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -11,7 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('admin', 'vendor')),
+  role TEXT NOT NULL CHECK (role IN ('admin', 'vendor', 'customer')),
   vendor_id TEXT REFERENCES vendors(id),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -63,6 +73,11 @@ CREATE TABLE IF NOT EXISTS load_reports (
   total_time_seconds INTEGER,
   uploaded_by TEXT NOT NULL REFERENCES users(id),
   uploaded_at TEXT NOT NULL DEFAULT (datetime('now')),
+  push_status TEXT NOT NULL DEFAULT 'draft' CHECK (push_status IN ('draft', 'pending', 'approved', 'rejected')),
+  pushed_at TEXT,
+  reviewed_at TEXT,
+  reviewed_by TEXT REFERENCES users(id),
+  review_note TEXT,
   UNIQUE (vendor_id, load_number)
 );
 

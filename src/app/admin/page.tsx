@@ -8,6 +8,7 @@ import {
   getCrossVendorParameterFailures,
   getAdminTimeline,
   getVendorStationHeatmap,
+  type VendorStat,
 } from '@/lib/admin-queries';
 import { AdminTabs } from '@/components/AdminTabs';
 import { VendorComparisonChart, PassRateChart } from '@/components/charts/VendorComparisonChart';
@@ -26,6 +27,24 @@ function cellFg(passes: number, total: number) {
   if (r >= 0.9) return '#166534';
   if (r >= 0.7) return '#92400e';
   return '#991b1b';
+}
+
+const PUSH_STATUS_STYLE: Record<string, { bg: string; color: string }> = {
+  draft:    { bg: '#f1f5f9', color: '#475569' },
+  pending:  { bg: '#fef3c7', color: '#92400e' },
+  approved: { bg: '#dcfce7', color: '#166534' },
+  rejected: { bg: '#fee2e2', color: '#991b1b' },
+};
+
+function groupByCategory(vendors: VendorStat[]): Map<string, VendorStat[]> {
+  const map = new Map<string, VendorStat[]>();
+  const UNCATEGORIZED = 'Uncategorised';
+  vendors.forEach((v) => {
+    const key = v.categoryName ?? UNCATEGORIZED;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(v);
+  });
+  return map;
 }
 
 export default async function AdminPage({
@@ -52,19 +71,34 @@ export default async function AdminPage({
           <span className="accent-bar" />
           Admin Dashboard
         </h1>
-        <Link
-          href="/"
-          style={{
-            fontSize: 12,
-            color: '#6b7280',
-            border: '1px solid var(--color-card-border)',
-            borderRadius: 6,
-            padding: '5px 14px',
-            textDecoration: 'none',
-          }}
-        >
-          ← Vendor View
-        </Link>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link
+            href="/customer"
+            style={{
+              fontSize: 12,
+              color: 'var(--color-navy-primary)',
+              border: '1px solid var(--color-navy-primary)',
+              borderRadius: 6,
+              padding: '5px 14px',
+              textDecoration: 'none',
+            }}
+          >
+            RE Portal
+          </Link>
+          <Link
+            href="/"
+            style={{
+              fontSize: 12,
+              color: '#6b7280',
+              border: '1px solid var(--color-card-border)',
+              borderRadius: 6,
+              padding: '5px 14px',
+              textDecoration: 'none',
+            }}
+          >
+            ← Vendor View
+          </Link>
+        </div>
       </div>
 
       {/* Global KPI strip */}
@@ -107,7 +141,9 @@ export default async function AdminPage({
 }
 
 /* ── Overview ── */
-function OverviewTab({ vendors }: { vendors: Awaited<ReturnType<typeof getVendorStats>> }) {
+function OverviewTab({ vendors }: { vendors: VendorStat[] }) {
+  const byCategory = groupByCategory(vendors);
+
   return (
     <div>
       <div className="grid-2" style={{ marginBottom: 24 }}>
@@ -121,55 +157,90 @@ function OverviewTab({ vendors }: { vendors: Awaited<ReturnType<typeof getVendor
         </div>
       </div>
 
-      <div className="chart-card">
-        <div className="chart-title">Vendor Summary</div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Vendor</th>
-                <th>Process</th>
-                <th>Loads</th>
-                <th>Readings</th>
-                <th>Pass</th>
-                <th>Fail</th>
-                <th>Pass Rate</th>
-                <th>Last Upload</th>
-              </tr>
-            </thead>
-            <tbody>
-              {vendors.map((v) => {
-                const rate = Math.round(v.passRate * 100);
-                return (
-                  <tr key={v.vendorId}>
-                    <td><strong>{v.vendorName}</strong></td>
-                    <td style={{ color: '#6b7280', fontSize: 12 }}>{v.processName}</td>
-                    <td>{v.loadCount}</td>
-                    <td>{v.totalReadings}</td>
-                    <td style={{ color: 'var(--color-success)', fontWeight: 600 }}>{v.passes}</td>
-                    <td style={{ color: v.fails > 0 ? 'var(--color-danger)' : '#9ca3af', fontWeight: 600 }}>{v.fails}</td>
-                    <td>
-                      <span
-                        className="badge"
-                        style={{
-                          background: rate >= 90 ? '#dcfce7' : rate >= 70 ? '#fef3c7' : '#fee2e2',
-                          color: rate >= 90 ? '#166534' : rate >= 70 ? '#92400e' : '#991b1b',
-                        }}
-                      >
-                        {rate}%
-                      </span>
-                    </td>
-                    <td style={{ color: '#6b7280', fontSize: 12 }}>{v.lastUploadAt?.slice(0, 16) ?? '—'}</td>
+      {/* Vendor summary grouped by category */}
+      {[...byCategory.entries()].map(([category, catVendors]) => (
+        <div key={category} style={{ marginBottom: 24 }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            marginBottom: 10,
+          }}>
+            <div style={{
+              background: 'var(--color-navy-primary)',
+              color: 'white',
+              padding: '3px 12px',
+              borderRadius: 4,
+              fontSize: 11,
+              fontFamily: 'Share Tech, monospace',
+              textTransform: 'uppercase',
+              letterSpacing: '0.07em',
+            }}>
+              {category}
+            </div>
+            <div style={{ fontSize: 12, color: '#9ca3af' }}>
+              {catVendors.length} vendor{catVendors.length !== 1 ? 's' : ''}
+              {catVendors.length > 0 && (() => {
+                const totalPasses = catVendors.reduce((a, v) => a + v.passes, 0);
+                const totalReadings = catVendors.reduce((a, v) => a + v.totalReadings, 0);
+                const rate = totalReadings > 0 ? Math.round((totalPasses / totalReadings) * 100) : null;
+                return rate !== null ? ` · ${rate}% pass rate` : '';
+              })()}
+            </div>
+          </div>
+          <div className="chart-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Vendor</th>
+                    <th>Code</th>
+                    <th>Process</th>
+                    <th>Loads</th>
+                    <th>Readings</th>
+                    <th>Pass</th>
+                    <th>Fail</th>
+                    <th>Pass Rate</th>
+                    <th>Last Upload</th>
                   </tr>
-                );
-              })}
-              {vendors.length === 0 && (
-                <tr><td colSpan={8} style={{ textAlign: 'center', color: '#9ca3af', padding: 24 }}>No vendors yet.</td></tr>
-              )}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {catVendors.map((v) => {
+                    const rate = Math.round(v.passRate * 100);
+                    return (
+                      <tr key={v.vendorId}>
+                        <td><strong>{v.vendorName}</strong></td>
+                        <td style={{ fontFamily: 'Share Tech, monospace', fontSize: 12, color: '#6b7280' }}>{v.vendorCode ?? '—'}</td>
+                        <td style={{ color: '#6b7280', fontSize: 12 }}>{v.processName}</td>
+                        <td>{v.loadCount}</td>
+                        <td>{v.totalReadings}</td>
+                        <td style={{ color: 'var(--color-success)', fontWeight: 600 }}>{v.passes}</td>
+                        <td style={{ color: v.fails > 0 ? 'var(--color-danger)' : '#9ca3af', fontWeight: 600 }}>{v.fails}</td>
+                        <td>
+                          <span
+                            className="badge"
+                            style={{
+                              background: rate >= 90 ? '#dcfce7' : rate >= 70 ? '#fef3c7' : '#fee2e2',
+                              color: rate >= 90 ? '#166534' : rate >= 70 ? '#92400e' : '#991b1b',
+                            }}
+                          >
+                            {rate}%
+                          </span>
+                        </td>
+                        <td style={{ color: '#6b7280', fontSize: 12 }}>{v.lastUploadAt?.slice(0, 16) ?? '—'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
+      ))}
+
+      {vendors.length === 0 && (
+        <p style={{ color: '#9ca3af', fontSize: 13 }}>No vendors yet.</p>
+      )}
     </div>
   );
 }
@@ -271,6 +342,7 @@ function TimelineTab({ db }: { db: ReturnType<typeof getDb> }) {
                 <th>Vendor</th>
                 <th>Load</th>
                 <th>Uploaded</th>
+                <th>Batch Status</th>
                 <th>Pass</th>
                 <th>Fail</th>
                 <th>Pass Rate</th>
@@ -280,11 +352,27 @@ function TimelineTab({ db }: { db: ReturnType<typeof getDb> }) {
               {timeline.map((t, i) => {
                 const total = t.passes + t.fails;
                 const rate = total > 0 ? Math.round((t.passes / total) * 100) : 0;
+                const ps = PUSH_STATUS_STYLE[t.pushStatus] ?? PUSH_STATUS_STYLE.draft;
                 return (
                   <tr key={i} className={t.fails > 0 ? 'out-of-limit' : ''}>
                     <td>{t.vendorName}</td>
                     <td><strong>{t.loadNumber}</strong></td>
                     <td style={{ color: '#6b7280', fontSize: 12 }}>{t.uploadedAt?.slice(0, 16)}</td>
+                    <td>
+                      <span style={{
+                        display: 'inline-block',
+                        padding: '2px 8px',
+                        borderRadius: 10,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: '0.04em',
+                        textTransform: 'uppercase',
+                        background: ps.bg,
+                        color: ps.color,
+                      }}>
+                        {t.pushStatus}
+                      </span>
+                    </td>
                     <td style={{ color: 'var(--color-success)', fontWeight: 600 }}>{t.passes}</td>
                     <td style={{ color: t.fails > 0 ? 'var(--color-danger)' : '#9ca3af', fontWeight: 600 }}>{t.fails}</td>
                     <td>
@@ -299,7 +387,7 @@ function TimelineTab({ db }: { db: ReturnType<typeof getDb> }) {
                 );
               })}
               {timeline.length === 0 && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', color: '#9ca3af', padding: 24 }}>No load data yet.</td></tr>
+                <tr><td colSpan={7} style={{ textAlign: 'center', color: '#9ca3af', padding: 24 }}>No load data yet.</td></tr>
               )}
             </tbody>
           </table>
@@ -310,86 +398,129 @@ function TimelineTab({ db }: { db: ReturnType<typeof getDb> }) {
 }
 
 /* ── Vendors ── */
-function VendorsTab({ vendors }: { vendors: Awaited<ReturnType<typeof getVendorStats>> }) {
+function VendorsTab({ vendors }: { vendors: VendorStat[] }) {
+  const byCategory = groupByCategory(vendors);
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-      {vendors.map((v) => {
-        const rate = Math.round(v.passRate * 100);
-        const barColor = rate >= 90 ? 'var(--color-success)' : rate >= 70 ? 'var(--color-warning)' : 'var(--color-danger)';
-        return (
-          <div key={v.vendorId} className="card" style={{ borderTop: `4px solid ${barColor}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--color-text-heading)' }}>{v.vendorName}</div>
-                <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>{v.processName}</div>
-              </div>
-              <span
-                className="badge"
-                style={{
-                  fontSize: 14,
-                  padding: '4px 12px',
-                  background: rate >= 90 ? '#dcfce7' : rate >= 70 ? '#fef3c7' : '#fee2e2',
-                  color: rate >= 90 ? '#166534' : rate >= 70 ? '#92400e' : '#991b1b',
-                }}
-              >
-                {rate}%
-              </span>
+    <div>
+      {[...byCategory.entries()].map(([category, catVendors]) => (
+        <div key={category} style={{ marginBottom: 32 }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            marginBottom: 16,
+            paddingBottom: 10,
+            borderBottom: '2px solid var(--color-navy-primary)',
+          }}>
+            <div style={{
+              fontFamily: 'Share Tech, monospace',
+              fontSize: 14,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.07em',
+              color: 'var(--color-navy-primary)',
+            }}>
+              {category}
             </div>
-
-            {/* Pass rate bar */}
-            <div style={{ height: 6, background: '#f1f5f9', borderRadius: 3, marginBottom: 14, overflow: 'hidden' }}>
-              <div style={{ width: `${rate}%`, height: '100%', background: barColor, borderRadius: 3, transition: 'width 0.4s' }} />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 14 }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-text-heading)', fontFamily: 'Share Tech, monospace' }}>{v.loadCount}</div>
-                <div style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Loads</div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-success)', fontFamily: 'Share Tech, monospace' }}>{v.passes}</div>
-                <div style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pass</div>
-              </div>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 18, fontWeight: 800, color: v.fails > 0 ? 'var(--color-danger)' : '#9ca3af', fontFamily: 'Share Tech, monospace' }}>{v.fails}</div>
-                <div style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fail</div>
-              </div>
-            </div>
-
-            <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 14 }}>
-              Last upload: {v.lastUploadAt?.slice(0, 16) ?? 'No data yet'}
-            </div>
-
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Link
-                href={`/sops?vendorId=${v.vendorId}`}
-                style={{
-                  flex: 1, textAlign: 'center',
-                  padding: '6px 0', borderRadius: 6, fontSize: 11,
-                  background: 'var(--color-navy-primary)', color: 'white',
-                  textDecoration: 'none', fontFamily: 'Share Tech, monospace',
-                  textTransform: 'uppercase', letterSpacing: '0.05em',
-                }}
-              >
-                SOPs
-              </Link>
-              <Link
-                href={`/settings`}
-                style={{
-                  flex: 1, textAlign: 'center',
-                  padding: '6px 0', borderRadius: 6, fontSize: 11,
-                  background: 'transparent', color: 'var(--color-navy-primary)',
-                  border: '1px solid var(--color-navy-primary)',
-                  textDecoration: 'none', fontFamily: 'Share Tech, monospace',
-                  textTransform: 'uppercase', letterSpacing: '0.05em',
-                }}
-              >
-                Settings
-              </Link>
-            </div>
+            <span style={{
+              background: '#eff6ff',
+              color: 'var(--color-navy-primary)',
+              fontSize: 11,
+              padding: '2px 8px',
+              borderRadius: 10,
+              fontWeight: 600,
+            }}>
+              {catVendors.length} vendor{catVendors.length !== 1 ? 's' : ''}
+            </span>
           </div>
-        );
-      })}
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+            {catVendors.map((v) => {
+              const rate = Math.round(v.passRate * 100);
+              const barColor = rate >= 90 ? 'var(--color-success)' : rate >= 70 ? 'var(--color-warning)' : 'var(--color-danger)';
+              return (
+                <div key={v.vendorId} className="card" style={{ borderTop: `4px solid ${barColor}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--color-text-heading)' }}>{v.vendorName}</div>
+                      {v.vendorCode && (
+                        <div style={{ fontSize: 11, color: 'var(--color-navy-primary)', fontFamily: 'Share Tech, monospace', marginTop: 2 }}>
+                          {v.vendorCode}
+                        </div>
+                      )}
+                      <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>{v.processName}</div>
+                    </div>
+                    <span
+                      className="badge"
+                      style={{
+                        fontSize: 14,
+                        padding: '4px 12px',
+                        background: rate >= 90 ? '#dcfce7' : rate >= 70 ? '#fef3c7' : '#fee2e2',
+                        color: rate >= 90 ? '#166534' : rate >= 70 ? '#92400e' : '#991b1b',
+                      }}
+                    >
+                      {rate}%
+                    </span>
+                  </div>
+
+                  <div style={{ height: 6, background: '#f1f5f9', borderRadius: 3, marginBottom: 14, overflow: 'hidden' }}>
+                    <div style={{ width: `${rate}%`, height: '100%', background: barColor, borderRadius: 3, transition: 'width 0.4s' }} />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 14 }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-text-heading)', fontFamily: 'Share Tech, monospace' }}>{v.loadCount}</div>
+                      <div style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Loads</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--color-success)', fontFamily: 'Share Tech, monospace' }}>{v.passes}</div>
+                      <div style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pass</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: v.fails > 0 ? 'var(--color-danger)' : '#9ca3af', fontFamily: 'Share Tech, monospace' }}>{v.fails}</div>
+                      <div style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fail</div>
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 14 }}>
+                    Last upload: {v.lastUploadAt?.slice(0, 16) ?? 'No data yet'}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <Link
+                      href={`/sops?vendorId=${v.vendorId}`}
+                      style={{
+                        flex: 1, textAlign: 'center',
+                        padding: '6px 0', borderRadius: 6, fontSize: 11,
+                        background: 'var(--color-navy-primary)', color: 'white',
+                        textDecoration: 'none', fontFamily: 'Share Tech, monospace',
+                        textTransform: 'uppercase', letterSpacing: '0.05em',
+                      }}
+                    >
+                      SOPs
+                    </Link>
+                    <Link
+                      href={`/settings`}
+                      style={{
+                        flex: 1, textAlign: 'center',
+                        padding: '6px 0', borderRadius: 6, fontSize: 11,
+                        background: 'transparent', color: 'var(--color-navy-primary)',
+                        border: '1px solid var(--color-navy-primary)',
+                        textDecoration: 'none', fontFamily: 'Share Tech, monospace',
+                        textTransform: 'uppercase', letterSpacing: '0.05em',
+                      }}
+                    >
+                      Settings
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+
       {vendors.length === 0 && (
         <p style={{ color: '#9ca3af', fontSize: 13 }}>No vendors found. Run the seed script to create demo data.</p>
       )}

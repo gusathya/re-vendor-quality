@@ -6,6 +6,7 @@ import { signOut, useSession } from 'next-auth/react';
 
 const VENDOR_LINKS = [
   { href: '/', label: 'Dashboard' },
+  { href: '/loads', label: 'My Loads' },
   { href: '/sops', label: 'SOPs' },
   { href: '/loads/new', label: 'Upload Load' },
   { href: '/inspections', label: 'Inspections' },
@@ -14,9 +15,14 @@ const VENDOR_LINKS = [
 
 const ADMIN_LINKS = [
   { href: '/admin', label: 'Admin Dashboard' },
+  { href: '/customer', label: 'RE Portal' },
   { href: '/sops', label: 'SOPs' },
   { href: '/loads/new', label: 'Upload Load' },
   { href: '/settings', label: 'Settings' },
+];
+
+const CUSTOMER_LINKS = [
+  { href: '/customer', label: 'Batch Review' },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -24,7 +30,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isLoginPage = pathname === '/login';
   const { data: session } = useSession();
   const role = (session?.user as { role?: string } | undefined)?.role;
-  const navLinks = role === 'admin' ? ADMIN_LINKS : VENDOR_LINKS;
+
+  const navLinks =
+    role === 'admin' ? ADMIN_LINKS :
+    role === 'customer' ? CUSTOMER_LINKS :
+    VENDOR_LINKS;
 
   return (
     <>
