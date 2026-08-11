@@ -57,12 +57,15 @@ export function getKpis(db: Database.Database, vendorId: string, filters: Dashbo
        FROM load_readings r JOIN load_reports lr ON lr.id = r.load_report_id
        WHERE ${sql}`,
     )
-    .get(...args) as { total: number; passes: number; fails: number };
+    .get(...args) as { total: number; passes: number | null; fails: number | null };
+
+  const passes = row.passes ?? 0;
+  const fails = row.fails ?? 0;
 
   return {
     totalReadings: row.total,
-    passRate: row.total > 0 ? row.passes / row.total : 0,
-    outOfLimitCount: row.fails,
+    passRate: row.total > 0 ? passes / row.total : 0,
+    outOfLimitCount: fails,
   };
 }
 

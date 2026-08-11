@@ -42,6 +42,11 @@ describe('getKpis', () => {
     expect(kpis.passRate).toBeCloseTo(0.5);
     expect(kpis.outOfLimitCount).toBe(1);
   });
+
+  it('returns all-zero numbers (not null) when no readings match the filters', () => {
+    const kpis = getKpis(db, vendorId, { parameterName: 'Nonexistent Parameter' });
+    expect(kpis).toEqual({ totalReadings: 0, passRate: 0, outOfLimitCount: 0 });
+  });
 });
 
 describe('getFilteredReadings', () => {
