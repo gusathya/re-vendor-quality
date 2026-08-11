@@ -1,8 +1,7 @@
 import { getDb } from '@/lib/db/client';
-import { getKpis, listLoadNumbers, getLoadReadingsByLoadNumber } from '@/lib/dashboard-queries';
+import { listLoadNumbers, getLoadReadingsByLoadNumber } from '@/lib/dashboard-queries';
 import { requireVendorSession } from '@/lib/require-vendor-session';
-import { KpiStrip } from '@/components/KpiStrip';
-import { DashboardTabs } from '@/components/DashboardTabs';
+import { DashboardShell } from '@/components/DashboardShell';
 
 // Next.js 16 passes searchParams as a Promise to Server Components (same as `params`,
 // see src/app/sops/[id]/page.tsx and the Table/Trends pages), so it must be awaited before use.
@@ -19,7 +18,6 @@ export default async function ComparePage({
   const bParam = resolvedSearchParams.b;
 
   const db = getDb();
-  const kpis = getKpis(db, vendorSession.vendorId, {});
   const loadNumbers = listLoadNumbers(db, vendorSession.vendorId);
 
   const loadA = typeof aParam === 'string' && aParam ? aParam : loadNumbers[0];
@@ -29,10 +27,7 @@ export default async function ComparePage({
   const readingsB = loadB ? getLoadReadingsByLoadNumber(db, vendorSession.vendorId, loadB) : [];
 
   return (
-    <main className="section">
-      <h1><span className="accent-bar" />Vendor Dashboard</h1>
-      <KpiStrip kpis={kpis} />
-      <DashboardTabs />
+    <DashboardShell vendorId={vendorSession.vendorId}>
       <h2>Compare loads</h2>
       <div className="split" style={{ display: 'flex', gap: 24 }}>
         <div>
@@ -62,6 +57,6 @@ export default async function ComparePage({
           </table>
         </div>
       </div>
-    </main>
+    </DashboardShell>
   );
 }

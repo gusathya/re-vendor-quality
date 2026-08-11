@@ -1,9 +1,8 @@
 import { getDb } from '@/lib/db/client';
-import { getKpis, getFilteredReadings, type DashboardFilters } from '@/lib/dashboard-queries';
+import { getFilteredReadings, type DashboardFilters } from '@/lib/dashboard-queries';
 import { requireVendorSession } from '@/lib/require-vendor-session';
-import { KpiStrip } from '@/components/KpiStrip';
+import { DashboardShell } from '@/components/DashboardShell';
 import { FilterBar } from '@/components/FilterBar';
-import { DashboardTabs } from '@/components/DashboardTabs';
 
 // Next.js 16 passes searchParams as a Promise to Server Components (same as `params`,
 // see src/app/sops/[id]/page.tsx), so it must be awaited before use.
@@ -25,14 +24,10 @@ export default async function DashboardPage({
   };
 
   const db = getDb();
-  const kpis = getKpis(db, vendorSession.vendorId, filters);
   const readings = getFilteredReadings(db, vendorSession.vendorId, filters);
 
   return (
-    <main className="section">
-      <h1><span className="accent-bar" />Vendor Dashboard</h1>
-      <KpiStrip kpis={kpis} />
-      <DashboardTabs />
+    <DashboardShell vendorId={vendorSession.vendorId} filters={filters}>
       <FilterBar />
       <table>
         <thead><tr><th>Load</th><th>Station</th><th>Parameter</th><th>Value</th><th>Score</th></tr></thead>
@@ -44,6 +39,6 @@ export default async function DashboardPage({
           ))}
         </tbody>
       </table>
-    </main>
+    </DashboardShell>
   );
 }

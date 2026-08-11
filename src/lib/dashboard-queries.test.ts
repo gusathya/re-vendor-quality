@@ -14,6 +14,7 @@ import {
   getParameterHotspots,
   listLoadNumbers,
   getLoadReadingsByLoadNumber,
+  getParameterCapability,
 } from './dashboard-queries';
 
 let db: Database.Database;
@@ -94,8 +95,40 @@ describe('load comparison', () => {
     expect(listLoadNumbers(db, vendorId)).toEqual(['L1']);
   });
 
+  it('lists multiple load numbers ordered lexicographically by load_number', () => {
+    // Local fixture only, so we don't perturb the shared beforeEach counts relied on by other tests.
+    const user = createUser(db, { email: 'b@a.local', passwordHash: 'h', role: 'admin', vendorId: null });
+    createLoadReport(db, {
+      vendorId, loadNumber: 'L10', filePath: '/y', partNumber: 'P2', totalWeightKg: 60,
+      loadInTime: '2026-08-02T00:00:00.000Z', loadOutTime: '2026-08-02T01:00:00.000Z',
+      totalTimeSeconds: 3600, uploadedBy: user.id,
+    });
+    createLoadReport(db, {
+      vendorId, loadNumber: 'L2', filePath: '/z', partNumber: 'P3', totalWeightKg: 60,
+      loadInTime: '2026-08-03T00:00:00.000Z', loadOutTime: '2026-08-03T01:00:00.000Z',
+      totalTimeSeconds: 3600, uploadedBy: user.id,
+    });
+    // Lexicographic order: 'L1' < 'L10' < 'L2' (not numeric order).
+    expect(listLoadNumbers(db, vendorId)).toEqual(['L1', 'L10', 'L2']);
+  });
+
   it('fetches all readings for one load number', () => {
     const rows = getLoadReadingsByLoadNumber(db, vendorId, 'L1');
     expect(rows).toHaveLength(2);
+  });
+});
+
+describe('getParameterCapability', () => {
+  it('computes average distance from the nearest limit for a parameter', () => {
+    // readings: 39 (min 50, distance -11, i.e. 11 below min) and 55 (min 50 max 70, distance 5 from min, 15 from max -> nearest 5)
+    const capability = getParameterCapability(db, vendorId, 'Temperature');
+    expect(capability.parameterName).toBe('Temperature');
+    expect(capability.sampleCount).toBe(2);
+    expect(capability.avgDistanceFromLimit).toBeCloseTo((-11 + 5) / 2);
+  });
+
+  it('returns null average with zero samples when the parameter has no scored data', () => {
+    const capability = getParameterCapability(db, vendorId, 'Nonexistent Parameter');
+    expect(capability).toEqual({ parameterName: 'Nonexistent Parameter', sampleCount: 0, avgDistanceFromLimit: null });
   });
 });

@@ -143,3 +143,36 @@ export function getLoadReadingsByLoadNumber(db: Database.Database, vendorId: str
     )
     .all(vendorId, loadNumber) as ReadingRow[];
 }
+
+export interface CapabilityResult {
+  parameterName: string;
+  sampleCount: number;
+  avgDistanceFromLimit: number | null;
+}
+
+/**
+ * Distance from the nearest limit, signed: negative means the reading was outside the
+ * limit on that side, positive means it was inside with that much headroom.
+ */
+export function getParameterCapability(db: Database.Database, vendorId: string, parameterName: string): CapabilityResult {
+  const rows = db
+    .prepare(
+      `SELECT r.value, p.min_value AS minValue, p.max_value AS maxValue
+       FROM load_readings r
+       JOIN load_reports lr ON lr.id = r.load_report_id
+       JOIN sop_parameters p ON p.id = r.sop_parameter_id
+       WHERE lr.vendor_id = ? AND r.parameter_name = ? AND r.value IS NOT NULL`,
+    )
+    .all(vendorId, parameterName) as { value: number; minValue: number | null; maxValue: number | null }[];
+
+  if (rows.length === 0) return { parameterName, sampleCount: 0, avgDistanceFromLimit: null };
+
+  const distances = rows.map(({ value, minValue, maxValue }) => {
+    const distToMin = minValue !== null ? value - minValue : Infinity;
+    const distToMax = maxValue !== null ? maxValue - value : Infinity;
+    return Math.min(distToMin, distToMax);
+  });
+
+  const avg = distances.reduce((sum, d) => sum + d, 0) / distances.length;
+  return { parameterName, sampleCount: rows.length, avgDistanceFromLimit: avg };
+}

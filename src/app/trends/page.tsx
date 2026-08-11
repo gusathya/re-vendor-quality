@@ -1,8 +1,7 @@
 import { getDb } from '@/lib/db/client';
-import { getKpis, getParameterTrend } from '@/lib/dashboard-queries';
+import { getParameterTrend } from '@/lib/dashboard-queries';
 import { requireVendorSession } from '@/lib/require-vendor-session';
-import { KpiStrip } from '@/components/KpiStrip';
-import { DashboardTabs } from '@/components/DashboardTabs';
+import { DashboardShell } from '@/components/DashboardShell';
 
 // Next.js 16 passes searchParams as a Promise to Server Components (same as `params`,
 // see src/app/sops/[id]/page.tsx, and the Table page at src/app/page.tsx), so it must be
@@ -20,14 +19,10 @@ export default async function TrendsPage({
   const parameterName = typeof parameterNameParam === 'string' && parameterNameParam ? parameterNameParam : 'Temperature';
 
   const db = getDb();
-  const kpis = getKpis(db, vendorSession.vendorId, {});
   const trend = getParameterTrend(db, vendorSession.vendorId, parameterName);
 
   return (
-    <main className="section">
-      <h1><span className="accent-bar" />Vendor Dashboard</h1>
-      <KpiStrip kpis={kpis} />
-      <DashboardTabs />
+    <DashboardShell vendorId={vendorSession.vendorId}>
       <h2>Trend — {parameterName}</h2>
       <table>
         <thead><tr><th>Load</th><th>Uploaded</th><th>Value</th><th>Score</th></tr></thead>
@@ -40,6 +35,6 @@ export default async function TrendsPage({
         </tbody>
       </table>
       {trend.length === 0 && <p>No scored readings yet for {parameterName}. Upload more load reports to see a trend.</p>}
-    </main>
+    </DashboardShell>
   );
 }
