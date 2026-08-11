@@ -6,7 +6,7 @@ import { createVendor } from './db/vendors';
 import { createUser } from './db/users';
 import { createDraftSopDocument, insertSopParameters, activateSopDocument } from './db/sop';
 import { createLoadReport, insertLoadReadings } from './db/load-reports';
-import { getKpis, getFilteredReadings, getParameterTrend } from './dashboard-queries';
+import { getKpis, getFilteredReadings, getParameterTrend, getStationHotspots, getParameterHotspots } from './dashboard-queries';
 
 let db: Database.Database;
 let vendorId: string;
@@ -66,5 +66,17 @@ describe('getParameterTrend', () => {
     const trend = getParameterTrend(db, vendorId, 'Temperature');
     expect(trend).toHaveLength(2);
     expect(trend.map((t) => t.score)).toEqual(['fail', 'pass']);
+  });
+});
+
+describe('hotspot rankings', () => {
+  it('ranks stations by fail count', () => {
+    const stations = getStationHotspots(db, vendorId);
+    expect(stations[0]).toMatchObject({ stationName: 'Hot Water Rinse', failCount: 1 });
+  });
+
+  it('ranks parameters by fail count', () => {
+    const params = getParameterHotspots(db, vendorId);
+    expect(params[0]).toMatchObject({ parameterName: 'Temperature', failCount: 1 });
   });
 });

@@ -98,3 +98,29 @@ export function getParameterTrend(db: Database.Database, vendorId: string, param
     )
     .all(vendorId, parameterName) as TrendPoint[];
 }
+
+export interface HotspotRow {
+  failCount: number;
+}
+
+export function getStationHotspots(db: Database.Database, vendorId: string): (HotspotRow & { stationName: string })[] {
+  return db
+    .prepare(
+      `SELECT r.station_name AS stationName, COUNT(*) AS failCount
+       FROM load_readings r JOIN load_reports lr ON lr.id = r.load_report_id
+       WHERE lr.vendor_id = ? AND r.score = 'fail'
+       GROUP BY r.station_name ORDER BY failCount DESC`,
+    )
+    .all(vendorId) as (HotspotRow & { stationName: string })[];
+}
+
+export function getParameterHotspots(db: Database.Database, vendorId: string): (HotspotRow & { parameterName: string })[] {
+  return db
+    .prepare(
+      `SELECT r.parameter_name AS parameterName, COUNT(*) AS failCount
+       FROM load_readings r JOIN load_reports lr ON lr.id = r.load_report_id
+       WHERE lr.vendor_id = ? AND r.score = 'fail'
+       GROUP BY r.parameter_name ORDER BY failCount DESC`,
+    )
+    .all(vendorId) as (HotspotRow & { parameterName: string })[];
+}
