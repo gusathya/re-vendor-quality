@@ -1,11 +1,10 @@
 import { getDb } from '@/lib/db/client';
-import { getFilteredReadings, type DashboardFilters } from '@/lib/dashboard-queries';
+import { getFilteredReadings, getLoadTimeline, type DashboardFilters } from '@/lib/dashboard-queries';
 import { requireVendorSession } from '@/lib/require-vendor-session';
 import { DashboardShell } from '@/components/DashboardShell';
 import { FilterBar } from '@/components/FilterBar';
+import { LoadTimelineChart } from '@/components/charts/LoadTimelineChart';
 
-// Next.js 16 passes searchParams as a Promise to Server Components (same as `params`,
-// see src/app/sops/[id]/page.tsx), so it must be awaited before use.
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -25,20 +24,46 @@ export default async function DashboardPage({
 
   const db = getDb();
   const readings = getFilteredReadings(db, vendorSession.vendorId, filters);
+  const timeline = getLoadTimeline(db, vendorSession.vendorId);
 
   return (
     <DashboardShell vendorId={vendorSession.vendorId} filters={filters}>
+      {timeline.length > 0 && (
+        <div className="chart-card" style={{ marginBottom: 20 }}>
+          <div className="chart-title">Load-by-Load Score Timeline</div>
+          <LoadTimelineChart data={timeline} />
+        </div>
+      )}
+
       <FilterBar />
-      <table>
-        <thead><tr><th>Load</th><th>Station</th><th>Parameter</th><th>Value</th><th>Score</th></tr></thead>
-        <tbody>
-          {readings.map((r) => (
-            <tr key={r.id} className={r.score === 'fail' ? 'out-of-limit' : ''}>
-              <td>{r.loadNumber}</td><td>{r.stationName}</td><td>{r.parameterName}</td><td>{r.value}</td><td>{r.score}</td>
+
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Load</th>
+              <th>Station</th>
+              <th>Parameter</th>
+              <th>Value</th>
+              <th>Score</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {readings.map((r) => (
+              <tr key={r.id} className={r.score === 'fail' ? 'out-of-limit' : ''}>
+                <td>{r.loadNumber}</td>
+                <td>{r.stationName}</td>
+                <td>{r.parameterName}</td>
+                <td><strong>{r.value}</strong></td>
+                <td><span className={`badge badge-${r.score}`}>{r.score}</span></td>
+              </tr>
+            ))}
+            {readings.length === 0 && (
+              <tr><td colSpan={5} style={{ textAlign: 'center', color: '#9ca3af', padding: 24 }}>No readings match the current filter.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </DashboardShell>
   );
 }

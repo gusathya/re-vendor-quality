@@ -1,16 +1,10 @@
 import type { ReactNode } from 'react';
 import { getDb } from '@/lib/db/client';
 import { getKpis, type DashboardFilters } from '@/lib/dashboard-queries';
+import { getVendorById } from '@/lib/db/vendors';
 import { KpiStrip } from '@/components/KpiStrip';
 import { DashboardTabs } from '@/components/DashboardTabs';
 
-// Shared wrapper for all 5 dashboard tab pages (Table, Trends, Hotspots, Compare, Capability):
-// each one renders the same "<h1>Vendor Dashboard</h1> + KPI strip + tab nav" header around
-// page-specific content. Extracted once this pattern was about to be copy-pasted a 5th time
-// (Task 21). Auth is deliberately NOT this component's job — callers must call
-// requireVendorSession() themselves first and pass the resolved vendorId, since several pages
-// (Trends, Compare, Capability) need that vendorId for their OWN additional queries beyond just
-// the KPI strip, not just for this shell.
 export function DashboardShell({
   vendorId,
   filters = {},
@@ -22,13 +16,45 @@ export function DashboardShell({
 }) {
   const db = getDb();
   const kpis = getKpis(db, vendorId, filters);
+  const vendor = getVendorById(db, vendorId);
 
   return (
     <main className="section">
-      <h1>
-        <span className="accent-bar" />
-        Vendor Dashboard
-      </h1>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
+        <h1 style={{ marginBottom: 0 }}>
+          <span className="accent-bar" />
+          Vendor Dashboard
+          {vendor && (
+            <span style={{ fontSize: 12, fontWeight: 400, color: '#6b7280', marginLeft: 12, textTransform: 'none', letterSpacing: 0 }}>
+              {vendor.name} — {vendor.processName}
+            </span>
+          )}
+        </h1>
+        {vendor?.folderUrl && (
+          <a
+            href={vendor.folderUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '7px 14px',
+              background: 'var(--color-navy-primary)',
+              color: 'white',
+              borderRadius: 6,
+              fontSize: 12,
+              fontFamily: 'Share Tech, monospace',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              textDecoration: 'none',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+            }}
+          >
+            📁 View Files
+          </a>
+        )}
+      </div>
+      <div style={{ marginBottom: 20 }} />
       <KpiStrip kpis={kpis} />
       <DashboardTabs />
       {children}

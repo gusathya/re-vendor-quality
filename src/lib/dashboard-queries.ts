@@ -86,13 +86,18 @@ export interface TrendPoint {
   uploadedAt: string;
   value: number | null;
   score: string;
+  minValue: number | null;
+  maxValue: number | null;
 }
 
 export function getParameterTrend(db: Database.Database, vendorId: string, parameterName: string): TrendPoint[] {
   return db
     .prepare(
-      `SELECT lr.load_number AS loadNumber, lr.uploaded_at AS uploadedAt, r.value, r.score
-       FROM load_readings r JOIN load_reports lr ON lr.id = r.load_report_id
+      `SELECT lr.load_number AS loadNumber, lr.uploaded_at AS uploadedAt, r.value, r.score,
+              p.min_value AS minValue, p.max_value AS maxValue
+       FROM load_readings r
+       JOIN load_reports lr ON lr.id = r.load_report_id
+       LEFT JOIN sop_parameters p ON p.id = r.sop_parameter_id
        WHERE lr.vendor_id = ? AND r.parameter_name = ? AND r.score != 'unscored'
        ORDER BY lr.uploaded_at ASC`,
     )
@@ -176,4 +181,60 @@ export function getParameterCapability(db: Database.Database, vendorId: string, 
 
   const avg = distances.reduce((sum, d) => sum + d, 0) / distances.length;
   return { parameterName, sampleCount: rows.length, avgDistanceFromLimit: avg };
+}
+
+export interface LoadTimelinePoint {
+  loadNumber: string;
+  passes: number;
+  fails: number;
+}
+
+export function getLoadTimeline(db: Database.Database, vendorId: string): LoadTimelinePoint[] {
+  return db
+    .prepare(
+      `SELECT lr.load_number AS loadNumber,
+              SUM(CASE WHEN r.score = 'pass' THEN 1 ELSE 0 END) AS passes,
+              SUM(CASE WHEN r.score = 'fail' THEN 1 ELSE 0 END) AS fails
+       FROM load_reports lr
+       JOIN load_readings r ON r.load_report_id = lr.id
+       WHERE lr.vendor_id = ? AND r.score != 'unscored'
+       GROUP BY lr.id, lr.load_number
+       ORDER BY lr.uploaded_at ASC`,
+    )
+    .all(vendorId) as LoadTimelinePoint[];
+}
+
+export interface HeatmapCell {
+  stationName: string;
+  parameterName: string;
+  passes: number;
+  total: number;
+}
+
+export function getHeatmapData(db: Database.Database, vendorId: string): HeatmapCell[] {
+  return db
+    .prepare(
+      `SELECT r.station_name AS stationName, r.parameter_name AS parameterName,
+              SUM(CASE WHEN r.score = 'pass' THEN 1 ELSE 0 END) AS passes,
+              COUNT(*) AS total
+       FROM load_readings r
+       JOIN load_reports lr ON lr.id = r.load_report_id
+       WHERE lr.vendor_id = ? AND r.score != 'unscored'
+       GROUP BY r.station_name, r.parameter_name
+       ORDER BY r.station_name, r.parameter_name`,
+    )
+    .all(vendorId) as HeatmapCell[];
+}
+
+export function listScoredParameterNames(db: Database.Database, vendorId: string): string[] {
+  return (
+    db
+      .prepare(
+        `SELECT DISTINCT r.parameter_name AS name
+         FROM load_readings r JOIN load_reports lr ON lr.id = r.load_report_id
+         WHERE lr.vendor_id = ? AND r.score != 'unscored'
+         ORDER BY name`,
+      )
+      .all(vendorId) as { name: string }[]
+  ).map((r) => r.name);
 }

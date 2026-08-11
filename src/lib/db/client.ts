@@ -16,6 +16,8 @@ export function createDb(filePath: string): Database.Database {
   const db = new Database(filePath);
   db.pragma('foreign_keys = ON');
   db.exec(readFileSync(SCHEMA_PATH, 'utf-8'));
+  // Additive column migrations — SQLite throws on duplicate ADD COLUMN, so we suppress that.
+  try { db.exec('ALTER TABLE vendors ADD COLUMN folder_url TEXT'); } catch {}
   return db;
 }
 

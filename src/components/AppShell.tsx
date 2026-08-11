@@ -2,36 +2,141 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { signOut, useSession } from 'next-auth/react';
 
-// Outer page chrome (header/nav/footer) applied to EVERY route via src/app/layout.tsx.
-// Distinct from DashboardShell (Task 21), which only wraps the 5 dashboard tab pages with
-// the KPI strip + tab nav. Nesting is: AppShell > DashboardShell > tab content.
-//
-// The nav links are hidden on /login: middleware (src/middleware.ts) redirects any
-// unauthenticated request for every other route back to /login, so showing "Dashboard /
-// SOPs / Upload Load / Inspections" links before sign-in would just bounce the user right
-// back where they started. The header/footer branding still renders on /login for a
-// consistent look; only the (currently non-functional, pre-auth) nav row is suppressed.
+const NAV_LINKS = [
+  { href: '/', label: 'Dashboard' },
+  { href: '/sops', label: 'SOPs' },
+  { href: '/loads/new', label: 'Upload Load' },
+  { href: '/inspections', label: 'Inspections' },
+  { href: '/settings', label: 'Settings' },
+];
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLoginPage = pathname === '/login';
+  const { data: session } = useSession();
 
   return (
     <>
-      <header style={{ background: 'var(--color-navy-primary)', color: 'var(--color-white)', padding: '8px 16px' }}>
-        Royal Enfield Vendor Quality
+      <header style={{
+        background: 'linear-gradient(135deg, var(--color-navy-deep) 0%, var(--color-navy-primary) 100%)',
+        color: 'white',
+        padding: '0 24px',
+        display: 'flex',
+        alignItems: 'center',
+        height: 60,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 36, height: 36,
+            borderRadius: '50%',
+            background: 'var(--color-red-accent)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'Share Tech, monospace',
+            fontWeight: 700, fontSize: 14, color: 'white',
+            flexShrink: 0,
+          }}>RE</div>
+          <div>
+            <div style={{ fontFamily: 'Share Tech, monospace', fontSize: 16, letterSpacing: '0.08em', textTransform: 'uppercase', lineHeight: 1.2 }}>
+              Royal Enfield
+            </div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              Vendor Quality Dashboard
+            </div>
+          </div>
+        </div>
       </header>
+
       {!isLoginPage && (
-        <nav style={{ background: 'var(--color-white)', borderBottom: '1px solid #ddd', padding: '8px 16px', display: 'flex', gap: 16 }}>
-          <Link href="/">Dashboard</Link>
-          <Link href="/sops">SOPs</Link>
-          <Link href="/loads/new">Upload Load</Link>
-          <Link href="/inspections">Inspections</Link>
+        <nav style={{
+          background: 'white',
+          borderBottom: '1px solid var(--color-card-border)',
+          padding: '0 20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          height: 46,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        }}>
+          {NAV_LINKS.map(({ href, label }) => {
+            const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: 6,
+                  fontSize: 13,
+                  fontWeight: isActive ? 700 : 400,
+                  color: isActive ? 'var(--color-navy-primary)' : 'var(--color-nav-link)',
+                  background: isActive ? '#eff6ff' : 'transparent',
+                  textDecoration: 'none',
+                  borderBottom: isActive ? '2px solid var(--color-navy-primary)' : '2px solid transparent',
+                  transition: 'all 0.12s',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {label}
+              </Link>
+            );
+          })}
+          {session?.user && (
+            <div style={{
+              marginLeft: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              paddingLeft: 12,
+              borderLeft: '1px solid var(--color-card-border)',
+            }}>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-heading)', lineHeight: 1.2 }}>
+                  {session.user.email}
+                </div>
+                <div style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {(session.user as { role?: string }).role ?? 'user'}
+                </div>
+              </div>
+              <button
+                onClick={() => signOut({ callbackUrl: '/login' })}
+                style={{
+                  background: 'none',
+                  border: '1px solid var(--color-card-border)',
+                  borderRadius: 6,
+                  padding: '5px 14px',
+                  fontSize: 12,
+                  color: 'var(--color-text-body)',
+                  cursor: 'pointer',
+                  textTransform: 'none',
+                  fontFamily: 'inherit',
+                  letterSpacing: 0,
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+              >
+                Sign Out
+              </button>
+            </div>
+          )}
         </nav>
       )}
+
       {children}
-      <footer style={{ borderTop: '2px solid var(--color-navy-primary)', padding: '16px', marginTop: 32, fontSize: 12 }}>
-        Royal Enfield Vendor Quality — local build
+
+      <footer style={{
+        borderTop: '3px solid var(--color-navy-primary)',
+        padding: '14px 24px',
+        marginTop: 40,
+        fontSize: 11,
+        color: '#9ca3af',
+        background: 'white',
+        textAlign: 'center',
+        letterSpacing: '0.03em',
+      }}>
+        Royal Enfield Vendor Quality Dashboard &mdash; Powered by Leadership Fractal
       </footer>
     </>
   );

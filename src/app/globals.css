@@ -3,25 +3,52 @@
   --color-navy-deep: #14213D;
   --color-red-accent: #BF1E2E;
   --color-white: #FFFFFF;
-  --color-text-body: #1C1C1C;
-  --color-text-heading: #333333;
+  --color-text-body: #374151;
+  --color-text-heading: #111827;
   --color-bg-light-gray: #F2F2F2;
-  --color-nav-link: #000000;
+  --color-nav-link: #374151;
+  --color-success: #16a34a;
+  --color-success-bg: #dcfce7;
+  --color-danger: #dc2626;
+  --color-danger-bg: #fee2e2;
+  --color-warning: #d97706;
+  --color-warning-bg: #fef3c7;
+  --color-card-bg: #ffffff;
+  --color-card-border: #e5e7eb;
+  --color-bg-page: #f1f5f9;
+  --radius-card: 10px;
+  --shadow-card: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
 }
 
 * { box-sizing: border-box; }
+
 body {
   margin: 0;
   font-family: 'Mulish', system-ui, sans-serif;
+  font-size: 14px;
   color: var(--color-text-body);
-  background: var(--color-white);
+  background: var(--color-bg-page);
+  line-height: 1.55;
 }
-h1, h2, h3 {
+
+h1, h2, h3, h4 {
   font-family: 'Share Tech', monospace;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--color-text-heading);
+  margin-top: 0;
 }
+h1 { font-size: 18px; margin-bottom: 20px; }
+h2 { font-size: 14px; margin-bottom: 14px; }
+h3 { font-size: 12px; margin-bottom: 10px; }
+
+a { color: var(--color-navy-primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Layout ── */
+.section { max-width: 1120px; margin: 0 auto; padding: 28px 20px; }
+
+/* ── Accent bar ── */
 .accent-bar {
   display: inline-block;
   width: 4px;
@@ -29,18 +56,129 @@ h1, h2, h3 {
   background: var(--color-red-accent);
   margin-right: 8px;
   vertical-align: middle;
+  border-radius: 2px;
 }
-.section { max-width: 1080px; margin: 0 auto; padding: 24px 16px; }
+
+/* ── Card ── */
+.card {
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 20px 24px;
+}
+
+/* ── KPI grid ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.kpi-card {
+  background: white;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 16px 20px;
+  border-left: 4px solid var(--color-navy-primary);
+}
+.kpi-card.green  { border-left-color: var(--color-success); }
+.kpi-card.red    { border-left-color: var(--color-danger); }
+.kpi-card.navy   { border-left-color: var(--color-navy-primary); }
+.kpi-card-label  { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: #6b7280; margin-bottom: 6px; font-weight: 600; }
+.kpi-card-value  { font-size: 30px; font-weight: 800; line-height: 1; color: var(--color-text-heading); font-family: 'Share Tech', monospace; }
+.kpi-card-sub    { font-size: 11px; color: #9ca3af; margin-top: 5px; }
+
+/* ── Buttons ── */
 button {
   background: var(--color-red-accent);
   color: var(--color-white);
   border: none;
-  border-radius: 0;
-  padding: 10px 20px;
+  border-radius: 6px;
+  padding: 9px 18px;
   font-family: 'Share Tech', monospace;
+  font-size: 12px;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
   cursor: pointer;
+  transition: opacity 0.15s;
 }
-table { width: 100%; border-collapse: collapse; }
-th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-tr.out-of-limit, tr.needs-review { background: #fdecea; }
+button:hover { opacity: 0.85; }
+
+/* ── Tables ── */
+.table-wrap { overflow-x: auto; border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
+table { width: 100%; border-collapse: collapse; background: white; font-size: 13px; }
+thead th {
+  background: var(--color-navy-primary);
+  color: white;
+  padding: 10px 14px;
+  text-align: left;
+  font-family: 'Share Tech', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+tbody td { padding: 9px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: #f8fafc; }
+tbody tr.out-of-limit td { background: #fff1f2; }
+tbody tr.needs-review td { background: #fffbeb; }
+
+/* ── Badges ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: 'Share Tech', monospace;
+}
+.badge-pass     { background: var(--color-success-bg); color: var(--color-success); }
+.badge-fail     { background: var(--color-danger-bg);  color: var(--color-danger); }
+.badge-unscored { background: #f3f4f6; color: #6b7280; }
+.badge-draft    { background: #dbeafe; color: #1d4ed8; }
+.badge-active   { background: var(--color-success-bg); color: var(--color-success); }
+.badge-superseded { background: #f3f4f6; color: #9ca3af; }
+
+/* ── Grid helpers ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+/* ── Form elements ── */
+input[type="text"], input[type="number"], input[type="email"],
+input[type="password"], input[type="url"], input[type="date"], select, textarea {
+  border: 1px solid var(--color-card-border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--color-text-body);
+  background: white;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--color-navy-primary); box-shadow: 0 0 0 2px rgba(27,42,74,0.1); }
+label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 4px; color: var(--color-text-heading); text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* ── Chart card wrapper ── */
+.chart-card {
+  background: white;
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+.chart-title {
+  font-family: 'Share Tech', monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #6b7280;
+  margin-bottom: 14px;
+}
