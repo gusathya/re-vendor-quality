@@ -1,6 +1,6 @@
-import { auth } from '@/lib/auth';
 import { getDb } from '@/lib/db/client';
 import { getKpis, getFilteredReadings, type DashboardFilters } from '@/lib/dashboard-queries';
+import { requireVendorSession } from '@/lib/require-vendor-session';
 import { KpiStrip } from '@/components/KpiStrip';
 import { FilterBar } from '@/components/FilterBar';
 import { DashboardTabs } from '@/components/DashboardTabs';
@@ -12,8 +12,8 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const session = await auth();
-  if (!session?.user?.vendorId) return <main className="section">Sign in as a vendor user to see the dashboard.</main>;
+  const vendorSession = await requireVendorSession();
+  if (!vendorSession) return <main className="section">Sign in as a vendor user to see the dashboard.</main>;
 
   const resolvedSearchParams = await searchParams;
   const resultParam = resolvedSearchParams.result;
@@ -25,8 +25,8 @@ export default async function DashboardPage({
   };
 
   const db = getDb();
-  const kpis = getKpis(db, session.user.vendorId, filters);
-  const readings = getFilteredReadings(db, session.user.vendorId, filters);
+  const kpis = getKpis(db, vendorSession.vendorId, filters);
+  const readings = getFilteredReadings(db, vendorSession.vendorId, filters);
 
   return (
     <main className="section">

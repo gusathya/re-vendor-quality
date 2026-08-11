@@ -6,7 +6,7 @@ import { createVendor } from './db/vendors';
 import { createUser } from './db/users';
 import { createDraftSopDocument, insertSopParameters, activateSopDocument } from './db/sop';
 import { createLoadReport, insertLoadReadings } from './db/load-reports';
-import { getKpis, getFilteredReadings } from './dashboard-queries';
+import { getKpis, getFilteredReadings, getParameterTrend } from './dashboard-queries';
 
 let db: Database.Database;
 let vendorId: string;
@@ -58,5 +58,13 @@ describe('getFilteredReadings', () => {
 
   it('returns all readings with no filter', () => {
     expect(getFilteredReadings(db, vendorId, {})).toHaveLength(2);
+  });
+});
+
+describe('getParameterTrend', () => {
+  it('returns readings for one parameter in chronological order with pass/fail flags', () => {
+    const trend = getParameterTrend(db, vendorId, 'Temperature');
+    expect(trend).toHaveLength(2);
+    expect(trend.map((t) => t.score)).toEqual(['fail', 'pass']);
   });
 });

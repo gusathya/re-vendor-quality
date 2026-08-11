@@ -80,3 +80,21 @@ export function getFilteredReadings(db: Database.Database, vendorId: string, fil
     )
     .all(...args) as ReadingRow[];
 }
+
+export interface TrendPoint {
+  loadNumber: string;
+  uploadedAt: string;
+  value: number | null;
+  score: string;
+}
+
+export function getParameterTrend(db: Database.Database, vendorId: string, parameterName: string): TrendPoint[] {
+  return db
+    .prepare(
+      `SELECT lr.load_number AS loadNumber, lr.uploaded_at AS uploadedAt, r.value, r.score
+       FROM load_readings r JOIN load_reports lr ON lr.id = r.load_report_id
+       WHERE lr.vendor_id = ? AND r.parameter_name = ? AND r.score != 'unscored'
+       ORDER BY lr.uploaded_at ASC`,
+    )
+    .all(vendorId, parameterName) as TrendPoint[];
+}
