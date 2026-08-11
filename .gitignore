@@ -1,6 +1,11 @@
 # brainstorming companion scratch files
 .superpowers/
 
+# Claude Code local config (machine-specific permissions and session state)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/worktrees/
+
 # vendor SOP/data files (real client data, kept out of git)
 Clients/
 
