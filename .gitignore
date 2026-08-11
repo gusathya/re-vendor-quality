@@ -8,6 +8,7 @@
 
 # vendor SOP/data files (real client data, kept out of git)
 Clients/
+Vendors/
 
 # dependencies
 /node_modules

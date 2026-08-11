@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "seed": "tsx scripts/seed.ts"
+    "seed": "tsx scripts/seed.ts",
+    "seed:synthetic": "tsx scripts/synthetic-data.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
