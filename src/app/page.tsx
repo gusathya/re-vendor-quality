@@ -1,69 +1,49 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import { auth } from '@/lib/auth';
+import { getDb } from '@/lib/db/client';
+import { getKpis, getFilteredReadings, type DashboardFilters } from '@/lib/dashboard-queries';
+import { KpiStrip } from '@/components/KpiStrip';
+import { FilterBar } from '@/components/FilterBar';
+import { DashboardTabs } from '@/components/DashboardTabs';
 
-export default function Home() {
+// Next.js 16 passes searchParams as a Promise to Server Components (same as `params`,
+// see src/app/sops/[id]/page.tsx), so it must be awaited before use.
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const session = await auth();
+  if (!session?.user?.vendorId) return <main className="section">Sign in as a vendor user to see the dashboard.</main>;
+
+  const resolvedSearchParams = await searchParams;
+  const resultParam = resolvedSearchParams.result;
+  const parameterNameParam = resolvedSearchParams.parameterName;
+
+  const filters: DashboardFilters = {
+    result: resultParam === 'pass' || resultParam === 'fail' ? resultParam : undefined,
+    parameterName: typeof parameterNameParam === 'string' && parameterNameParam ? parameterNameParam : undefined,
+  };
+
+  const db = getDb();
+  const kpis = getKpis(db, session.user.vendorId, filters);
+  const readings = getFilteredReadings(db, session.user.vendorId, filters);
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>
-            To get started, edit the{" "}
-            <code className={styles.code}>page.tsx</code> file.
-          </h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main className="section">
+      <h1><span className="accent-bar" />Vendor Dashboard</h1>
+      <KpiStrip kpis={kpis} />
+      <DashboardTabs />
+      <FilterBar />
+      <table>
+        <thead><tr><th>Load</th><th>Station</th><th>Parameter</th><th>Value</th><th>Score</th></tr></thead>
+        <tbody>
+          {readings.map((r) => (
+            <tr key={r.id} className={r.score === 'fail' ? 'out-of-limit' : ''}>
+              <td>{r.loadNumber}</td><td>{r.stationName}</td><td>{r.parameterName}</td><td>{r.value}</td><td>{r.score}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </main>
   );
 }
