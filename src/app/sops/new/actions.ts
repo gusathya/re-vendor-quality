@@ -27,7 +27,8 @@ export async function uploadSop(formData: FormData) {
   const vendor = getVendorByName(db, vendorName);
   if (!vendor) throw new Error(`Unknown vendor: ${vendorName}`);
 
-  const uploadDir = path.resolve('./Clients', vendorName, 'SOP');
+  const uploadsRoot = process.env.UPLOADS_ROOT ?? './Clients';
+  const uploadDir = path.resolve(uploadsRoot, vendorName, 'SOP');
   await mkdir(uploadDir, { recursive: true });
   const filePath = path.join(uploadDir, safeUploadFilename(file.name));
   await writeFile(filePath, buffer);

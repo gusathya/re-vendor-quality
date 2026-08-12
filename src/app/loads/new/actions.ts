@@ -40,7 +40,8 @@ export async function uploadLoadReport(formData: FormData) {
 
   const aliases = getStationAliasesForVendor(db, vendor.id);
 
-  const uploadDir = path.resolve('./Vendors', vendorName, 'Uploads');
+  const uploadsRoot = process.env.UPLOADS_ROOT ?? './Vendors';
+  const uploadDir = path.resolve(uploadsRoot, vendorName, 'Uploads');
   await mkdir(uploadDir, { recursive: true });
   const filePath = path.join(uploadDir, safeUploadFilename(file.name));
   await writeFile(filePath, buffer);
