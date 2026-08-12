@@ -19,7 +19,7 @@ A Next.js application for tracking Royal Enfield vendor quality via SOP-based pl
 ## Step 1 — Clone the repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/gusathya/re-vendor-quality
 cd VQ_Claude
 ```
 
