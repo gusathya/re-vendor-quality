@@ -13,7 +13,7 @@ const PUSH_STATUS_STYLE: Record<string, { bg: string; color: string }> = {
 
 export function TimelineTabClient({ timeline }: { timeline: AdminTimelinePoint[] }) {
   const vendorNames = [...new Set(timeline.map((t) => t.vendorName))].sort();
-  const [selected, setSelected] = useState<Set<string>>(new Set(vendorNames));
+  const [selected, setSelected] = useState<Set<string>>(new Set(vendorNames.slice(0, 1)));
 
   function toggle(name: string) {
     setSelected((prev) => {

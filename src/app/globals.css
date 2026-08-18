@@ -17,7 +17,8 @@
   --color-card-border:    #e5e7eb;
   --color-bg-page:        #f1f5f9;
   --color-table-head-bg:  var(--color-navy-primary);
-  --color-nav-active-bg:  #eff6ff;
+  --color-nav-active-bg:   #eff6ff;
+  --color-nav-active-text: var(--color-navy-primary);
   --radius-card: 10px;
   --shadow-card: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
 }
@@ -192,7 +193,8 @@ label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 4px; c
   --color-card-bg:        #161b22;
   --color-card-border:    #30363d;
   --color-bg-light-gray:  #161b22;
-  --color-nav-active-bg:  rgba(27,42,74,0.55);
+  --color-nav-active-bg:   rgba(27,42,74,0.55);
+  --color-nav-active-text: #e6edf3;
   --color-table-head-bg:  #1c2d47;
 
   /* Text */

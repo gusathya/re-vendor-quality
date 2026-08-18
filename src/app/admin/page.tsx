@@ -47,7 +47,7 @@ export default async function AdminPage({
 }) {
   const session = await auth();
   if (!session?.user) redirect('/login');
-  if (session.user.role !== 'admin') redirect('/');
+  if (session.user.role !== 'admin' && session.user.role !== 'customer') redirect('/');
 
   const resolvedParams = await searchParams;
   const tab = typeof resolvedParams.tab === 'string' ? resolvedParams.tab : 'overview';
@@ -62,7 +62,7 @@ export default async function AdminPage({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <h1 style={{ margin: 0 }}>
           <span className="accent-bar" />
-          Admin Dashboard
+          {session.user.role === 'admin' ? 'Admin Dashboard' : 'Analytics'}
         </h1>
         <div style={{ display: 'flex', gap: 8 }}>
           <Link
@@ -78,19 +78,21 @@ export default async function AdminPage({
           >
             RE Portal
           </Link>
-          <Link
-            href="/"
-            style={{
-              fontSize: 12,
-              color: '#6b7280',
-              border: '1px solid var(--color-card-border)',
-              borderRadius: 6,
-              padding: '5px 14px',
-              textDecoration: 'none',
-            }}
-          >
-            ← Vendor View
-          </Link>
+          {session.user.role === 'admin' && (
+            <Link
+              href="/"
+              style={{
+                fontSize: 12,
+                color: '#6b7280',
+                border: '1px solid var(--color-card-border)',
+                borderRadius: 6,
+                padding: '5px 14px',
+                textDecoration: 'none',
+              }}
+            >
+              ← Vendor View
+            </Link>
+          )}
         </div>
       </div>
 

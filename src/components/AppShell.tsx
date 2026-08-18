@@ -24,6 +24,8 @@ const ADMIN_LINKS = [
 
 const CUSTOMER_LINKS = [
   { href: '/customer', label: 'Batch Review' },
+  { href: '/sops', label: 'SOPs' },
+  { href: '/admin', label: 'Analytics' },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -93,10 +95,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   borderRadius: 6,
                   fontSize: 13,
                   fontWeight: isActive ? 700 : 400,
-                  color: isActive ? 'var(--color-navy-primary)' : 'var(--color-nav-link)',
+                  color: isActive ? 'var(--color-nav-active-text)' : 'var(--color-nav-link)',
                   background: isActive ? 'var(--color-nav-active-bg)' : 'transparent',
                   textDecoration: 'none',
-                  borderBottom: isActive ? '2px solid var(--color-navy-primary)' : '2px solid transparent',
+                  borderBottom: isActive ? '2px solid var(--color-nav-active-text)' : '2px solid transparent',
                   transition: 'all 0.12s',
                   whiteSpace: 'nowrap',
                 }}
