@@ -30,7 +30,7 @@ export default async function SopsPage() {
         <span className="accent-bar" />
         SOP Library
       </h1>
-      <Link href="/sops/new">Feed a new SOP</Link>
+      {role !== 'customer' && <Link href="/sops/new">Feed a new SOP</Link>}
       <ul>
         {docs.map((d) => (
           <li key={d.id}>

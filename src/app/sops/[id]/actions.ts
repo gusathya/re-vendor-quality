@@ -1,5 +1,6 @@
 'use server';
 
+import { auth } from '@/lib/auth';
 import { getDb } from '@/lib/db/client';
 import {
   activateSopDocument, getSopParametersByDocument, updateSopParameterLimits, type SopParameter,
@@ -7,12 +8,20 @@ import {
 import { upsertStationAlias } from '@/lib/db/station-aliases';
 import { revalidatePath } from 'next/cache';
 
+async function requireEditAccess() {
+  const session = await auth();
+  if (!session?.user || !['admin', 'customer'].includes(session.user.role)) {
+    throw new Error('Unauthorized');
+  }
+}
+
 export async function updateSopParameter(
   id: string,
   minValue: number | null,
   maxValue: number | null,
   unit: string | null,
 ) {
+  await requireEditAccess();
   updateSopParameterLimits(getDb(), id, minValue, maxValue, unit);
 }
 
@@ -24,6 +33,7 @@ export async function updateSopParameter(
 // (in the station-aliases repository) implements exactly this: update in place if the
 // pair exists, insert otherwise.
 export async function setStationAlias(vendorId: string, stationGroupKeyValue: string, loadReportStationName: string) {
+  await requireEditAccess();
   upsertStationAlias(getDb(), {
     vendorId,
     stationGroupKey: stationGroupKeyValue,
@@ -32,6 +42,7 @@ export async function setStationAlias(vendorId: string, stationGroupKeyValue: st
 }
 
 export async function activateSop(sopDocumentId: string, vendorId: string) {
+  await requireEditAccess();
   activateSopDocument(getDb(), sopDocumentId, vendorId);
   revalidatePath(`/sops/${sopDocumentId}`);
 }

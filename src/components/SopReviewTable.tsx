@@ -8,10 +8,12 @@ export function SopReviewTable({
   parameters,
   vendorId,
   aliasByGroupKey,
+  readOnly = false,
 }: {
   parameters: SopParameter[];
   vendorId: string;
   aliasByGroupKey: Record<string, string>;
+  readOnly?: boolean;
 }) {
   const [rows, setRows] = useState(parameters);
 
@@ -45,14 +47,16 @@ export function SopReviewTable({
           <th>Max</th>
           <th>Unit</th>
           <th>Raw Control Limit</th>
-          <th>
-            Load-Report Station Name
-            <br />
-            <small>
-              Note: if a load-report station name repeats at multiple physical stations (e.g. rinse steps), only
-              one SOP row can be aliased to it for now.
-            </small>
-          </th>
+          {!readOnly && (
+            <th>
+              Load-Report Station Name
+              <br />
+              <small>
+                Note: if a load-report station name repeats at multiple physical stations (e.g. rinse steps), only
+                one SOP row can be aliased to it for now.
+              </small>
+            </th>
+          )}
         </tr>
       </thead>
       <tbody>
@@ -62,39 +66,51 @@ export function SopReviewTable({
             <td>{row.process}</td>
             <td>{row.characteristic}</td>
             <td>{row.status}</td>
-            <td>
-              <input
-                type="number"
-                step="any"
-                value={row.minValue ?? ''}
-                onChange={(e) => handleChange(row.id, 'minValue', e.target.value)}
-                onBlur={() => handleSave(row)}
-              />
-            </td>
-            <td>
-              <input
-                type="number"
-                step="any"
-                value={row.maxValue ?? ''}
-                onChange={(e) => handleChange(row.id, 'maxValue', e.target.value)}
-                onBlur={() => handleSave(row)}
-              />
-            </td>
-            <td>
-              <input
-                value={row.unit ?? ''}
-                onChange={(e) => handleChange(row.id, 'unit', e.target.value)}
-                onBlur={() => handleSave(row)}
-              />
-            </td>
+            {readOnly ? (
+              <>
+                <td>{row.minValue ?? '—'}</td>
+                <td>{row.maxValue ?? '—'}</td>
+                <td>{row.unit ?? '—'}</td>
+              </>
+            ) : (
+              <>
+                <td>
+                  <input
+                    type="number"
+                    step="any"
+                    value={row.minValue ?? ''}
+                    onChange={(e) => handleChange(row.id, 'minValue', e.target.value)}
+                    onBlur={() => handleSave(row)}
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    step="any"
+                    value={row.maxValue ?? ''}
+                    onChange={(e) => handleChange(row.id, 'maxValue', e.target.value)}
+                    onBlur={() => handleSave(row)}
+                  />
+                </td>
+                <td>
+                  <input
+                    value={row.unit ?? ''}
+                    onChange={(e) => handleChange(row.id, 'unit', e.target.value)}
+                    onBlur={() => handleSave(row)}
+                  />
+                </td>
+              </>
+            )}
             <td>{row.rawControlLimit}</td>
-            <td>
-              <input
-                placeholder="e.g. Hot Water Rinse"
-                defaultValue={aliasByGroupKey[row.stationGroupKey] ?? ''}
-                onBlur={(e) => e.target.value && handleAlias(row, e.target.value)}
-              />
-            </td>
+            {!readOnly && (
+              <td>
+                <input
+                  placeholder="e.g. Hot Water Rinse"
+                  defaultValue={aliasByGroupKey[row.stationGroupKey] ?? ''}
+                  onBlur={(e) => e.target.value && handleAlias(row, e.target.value)}
+                />
+              </td>
+            )}
           </tr>
         ))}
       </tbody>
