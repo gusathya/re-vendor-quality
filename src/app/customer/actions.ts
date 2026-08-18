@@ -14,7 +14,9 @@ export async function approveLoadReport(formData: FormData): Promise<void> {
   if (!session?.user || !canReview(session.user.role)) return;
 
   const loadId = formData.get('loadId');
+  const note = formData.get('reviewNote');
   if (typeof loadId !== 'string' || !loadId) return;
+  if (typeof note !== 'string' || !note.trim()) return;
 
   const db = getDb();
   const load = db
@@ -24,8 +26,8 @@ export async function approveLoadReport(formData: FormData): Promise<void> {
   if (!load || load.push_status !== 'pending') return;
 
   db.prepare(
-    "UPDATE load_reports SET push_status = 'approved', reviewed_at = datetime('now'), reviewed_by = ? WHERE id = ?",
-  ).run(session.user.id, loadId);
+    "UPDATE load_reports SET push_status = 'approved', reviewed_at = datetime('now'), reviewed_by = ?, review_note = ? WHERE id = ?",
+  ).run(session.user.id, note.trim(), loadId);
 
   revalidatePath('/customer');
   revalidatePath('/admin');

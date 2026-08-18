@@ -39,6 +39,7 @@ export default async function CustomerPage({
   if (session.user.role !== 'customer' && session.user.role !== 'admin') redirect('/');
 
   const resolvedParams = await searchParams;
+  const approveId = typeof resolvedParams.approve === 'string' ? resolvedParams.approve : null;
   const rejectId = typeof resolvedParams.reject === 'string' ? resolvedParams.reject : null;
   const emailLoadId = typeof resolvedParams.emailLoadId === 'string' ? resolvedParams.emailLoadId : null;
 
@@ -104,6 +105,93 @@ export default async function CustomerPage({
         </div>
       )}
 
+      {/* Approve modal */}
+      {approveId && (() => {
+        const load = loads.find((l) => l.id === approveId && l.pushStatus === 'pending');
+        if (!load) return null;
+        return (
+          <div style={{
+            position: 'fixed', inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 100,
+          }}>
+            <div style={{
+              background: 'var(--color-card-bg)',
+              borderRadius: 12,
+              padding: 28,
+              maxWidth: 500,
+              width: '90vw',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
+            }}>
+              <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--color-text-heading)', marginBottom: 8 }}>
+                Approve Batch — Load {load.loadNumber}
+              </div>
+              <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>
+                {load.vendorCode ? `[${load.vendorCode}] ` : ''}{load.vendorName}
+              </div>
+              <form action={approveLoadReport}>
+                <input type="hidden" name="loadId" value={load.id} />
+                <label style={{ display: 'block', marginBottom: 14 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>
+                    Approval note (required)
+                  </span>
+                  <textarea
+                    name="reviewNote"
+                    required
+                    rows={4}
+                    placeholder="Confirm compliance, note any observations or conditions attached to this approval..."
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      padding: '10px 12px',
+                      borderRadius: 6,
+                      border: '1px solid var(--color-card-border)',
+                      background: 'var(--color-bg-page)',
+                      color: 'var(--color-text-body)',
+                      fontSize: 13,
+                      fontFamily: 'inherit',
+                      resize: 'vertical',
+                    }}
+                  />
+                </label>
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                  <a
+                    href="/customer"
+                    style={{
+                      padding: '8px 18px',
+                      borderRadius: 6,
+                      fontSize: 13,
+                      border: '1px solid var(--color-card-border)',
+                      color: 'var(--color-text-body)',
+                      textDecoration: 'none',
+                      display: 'inline-block',
+                    }}
+                  >
+                    Cancel
+                  </a>
+                  <button
+                    type="submit"
+                    style={{
+                      padding: '8px 18px',
+                      borderRadius: 6,
+                      fontSize: 13,
+                      background: 'var(--color-success)',
+                      color: 'white',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    Confirm Approval
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Reject modal */}
       {rejectId && (() => {
         const load = loads.find((l) => l.id === rejectId && l.pushStatus === 'pending');
@@ -116,12 +204,12 @@ export default async function CustomerPage({
             zIndex: 100,
           }}>
             <div style={{
-              background: 'white',
+              background: 'var(--color-card-bg)',
               borderRadius: 12,
               padding: 28,
               maxWidth: 500,
               width: '90vw',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
             }}>
               <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--color-text-heading)', marginBottom: 8 }}>
                 Reject Batch — Load {load.loadNumber}
@@ -146,6 +234,8 @@ export default async function CustomerPage({
                       padding: '10px 12px',
                       borderRadius: 6,
                       border: '1px solid var(--color-card-border)',
+                      background: 'var(--color-bg-page)',
+                      color: 'var(--color-text-body)',
                       fontSize: 13,
                       fontFamily: 'inherit',
                       resize: 'vertical',
@@ -251,27 +341,26 @@ export default async function CustomerPage({
                         </td>
                         <td>
                           <div style={{ display: 'flex', gap: 8 }}>
-                            <form action={approveLoadReport} style={{ margin: 0 }}>
-                              <input type="hidden" name="loadId" value={load.id} />
-                              <button
-                                type="submit"
-                                style={{
-                                  background: 'var(--color-success)',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: 6,
-                                  padding: '5px 14px',
-                                  fontSize: 11,
-                                  fontFamily: 'Share Tech, monospace',
-                                  textTransform: 'uppercase',
-                                  letterSpacing: '0.05em',
-                                  cursor: 'pointer',
-                                  whiteSpace: 'nowrap',
-                                }}
-                              >
-                                Approve
-                              </button>
-                            </form>
+                            <a
+                              href={`/customer?approve=${load.id}`}
+                              style={{
+                                background: 'var(--color-success)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: 6,
+                                padding: '5px 14px',
+                                fontSize: 11,
+                                fontFamily: 'Share Tech, monospace',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap',
+                                textDecoration: 'none',
+                                display: 'inline-block',
+                              }}
+                            >
+                              Approve
+                            </a>
                             <a
                               href={`/customer?reject=${load.id}`}
                               style={{
