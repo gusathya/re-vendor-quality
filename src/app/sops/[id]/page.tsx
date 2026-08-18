@@ -2,16 +2,26 @@ import { getDraftParameters, activateSop } from './actions';
 import { SopReviewTable } from '@/components/SopReviewTable';
 import { getDb } from '@/lib/db/client';
 import { getStationAliasesForVendor } from '@/lib/db/station-aliases';
+import { auth } from '@/lib/auth';
 
 // Next.js 16 passes route params as a Promise to Server Components, so it must be
 // awaited before use (see next/dist/docs/01-app/01-getting-started/03-layouts-and-pages.md).
 export default async function SopReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
+  const session = await auth();
+  const role = session?.user?.role;
+  const sessionVendorId = session?.user?.vendorId ?? null;
+
   const doc = getDb()
     .prepare('SELECT vendor_id AS vendorId, status FROM sop_documents WHERE id = ?')
     .get(id) as { vendorId: string; status: string } | undefined;
   if (!doc) return <main className="section">SOP not found.</main>;
+
+  // Vendors may only view their own SOPs.
+  if (role === 'vendor' && doc.vendorId !== sessionVendorId) {
+    return <main className="section">Not found.</main>;
+  }
 
   const parameters = await getDraftParameters(id);
 
