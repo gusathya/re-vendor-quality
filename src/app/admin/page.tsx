@@ -12,8 +12,8 @@ import {
 } from '@/lib/admin-queries';
 import { AdminTabs } from '@/components/AdminTabs';
 import { VendorComparisonChart, PassRateChart } from '@/components/charts/VendorComparisonChart';
-import { AdminTimelineChart } from '@/components/charts/AdminTimelineChart';
 import { HotspotChart } from '@/components/charts/HotspotChart';
+import { TimelineTabClient } from '@/components/TimelineTabClient';
 import Link from 'next/link';
 
 function cellBg(passes: number, total: number) {
@@ -28,13 +28,6 @@ function cellFg(passes: number, total: number) {
   if (r >= 0.7) return '#92400e';
   return '#991b1b';
 }
-
-const PUSH_STATUS_STYLE: Record<string, { bg: string; color: string }> = {
-  draft:    { bg: '#f1f5f9', color: '#475569' },
-  pending:  { bg: '#fef3c7', color: '#92400e' },
-  approved: { bg: '#dcfce7', color: '#166534' },
-  rejected: { bg: '#fee2e2', color: '#991b1b' },
-};
 
 function groupByCategory(vendors: VendorStat[]): Map<string, VendorStat[]> {
   const map = new Map<string, VendorStat[]>();
@@ -325,76 +318,7 @@ function FailuresTab({ db }: { db: ReturnType<typeof getDb> }) {
 /* ── Timeline ── */
 function TimelineTab({ db }: { db: ReturnType<typeof getDb> }) {
   const timeline = getAdminTimeline(db);
-
-  return (
-    <div>
-      <div className="chart-card" style={{ marginBottom: 24 }}>
-        <div className="chart-title">Load-by-Load Results — All Vendors (chronological)</div>
-        <AdminTimelineChart data={timeline} />
-      </div>
-
-      <div className="chart-card">
-        <div className="chart-title">Load Detail</div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Vendor</th>
-                <th>Load</th>
-                <th>Uploaded</th>
-                <th>Batch Status</th>
-                <th>Pass</th>
-                <th>Fail</th>
-                <th>Pass Rate</th>
-              </tr>
-            </thead>
-            <tbody>
-              {timeline.map((t, i) => {
-                const total = t.passes + t.fails;
-                const rate = total > 0 ? Math.round((t.passes / total) * 100) : 0;
-                const ps = PUSH_STATUS_STYLE[t.pushStatus] ?? PUSH_STATUS_STYLE.draft;
-                return (
-                  <tr key={i} className={t.fails > 0 ? 'out-of-limit' : ''}>
-                    <td>{t.vendorName}</td>
-                    <td><strong>{t.loadNumber}</strong></td>
-                    <td style={{ color: '#6b7280', fontSize: 12 }}>{t.uploadedAt?.slice(0, 16)}</td>
-                    <td>
-                      <span style={{
-                        display: 'inline-block',
-                        padding: '2px 8px',
-                        borderRadius: 10,
-                        fontSize: 10,
-                        fontWeight: 700,
-                        letterSpacing: '0.04em',
-                        textTransform: 'uppercase',
-                        background: ps.bg,
-                        color: ps.color,
-                      }}>
-                        {t.pushStatus}
-                      </span>
-                    </td>
-                    <td style={{ color: 'var(--color-success)', fontWeight: 600 }}>{t.passes}</td>
-                    <td style={{ color: t.fails > 0 ? 'var(--color-danger)' : '#9ca3af', fontWeight: 600 }}>{t.fails}</td>
-                    <td>
-                      <span className="badge" style={{
-                        background: rate >= 90 ? '#dcfce7' : rate >= 70 ? '#fef3c7' : '#fee2e2',
-                        color: rate >= 90 ? '#166534' : rate >= 70 ? '#92400e' : '#991b1b',
-                      }}>
-                        {rate}%
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-              {timeline.length === 0 && (
-                <tr><td colSpan={7} style={{ textAlign: 'center', color: '#9ca3af', padding: 24 }}>No load data yet.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
+  return <TimelineTabClient timeline={timeline} />;
 }
 
 /* ── Vendors ── */

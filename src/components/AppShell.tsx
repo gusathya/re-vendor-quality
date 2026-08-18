@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
+import { ThemeToggle } from './ThemeToggle';
 
 const VENDOR_LINKS = [
   { href: '/', label: 'Dashboard' },
@@ -44,6 +45,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         padding: '0 24px',
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'space-between',
         height: 60,
         boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
       }}>
@@ -66,11 +68,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </div>
+        <ThemeToggle />
       </header>
 
       {!isLoginPage && (
         <nav style={{
-          background: 'white',
+          background: 'var(--color-card-bg)',
           borderBottom: '1px solid var(--color-card-border)',
           padding: '0 20px',
           display: 'flex',
@@ -151,7 +154,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         marginTop: 40,
         fontSize: 11,
         color: '#9ca3af',
-        background: 'white',
+        background: 'var(--color-card-bg)',
         textAlign: 'center',
         letterSpacing: '0.03em',
       }}>

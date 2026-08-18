@@ -50,21 +50,16 @@ export default async function SopReviewPage({ params }: { params: Promise<{ id: 
     .get(doc.vendorId) as { email: string } | undefined;
   const vendorEmail = vendorUserRow?.email ?? '';
 
-  let mailtoHref = '';
-  if (role === 'customer' && vendor && vendorEmail) {
-    const draft = draftNewSopEmail({
-      vendorEmail,
-      vendorName: vendor.name,
-      vendorCode: vendor.vendorCode ?? '',
-      processName: vendor.processName,
-      sopId: id,
-      effectiveDate: doc.activatedAt?.split('T')[0] ?? new Date().toISOString().split('T')[0],
-    });
-    const [, subjectLine, , ...bodyLines] = draft.split('\n');
-    const subject = subjectLine.replace('Subject: ', '');
-    const body = bodyLines.join('\n');
-    mailtoHref = `mailto:${vendorEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  }
+  const emailDraft = role === 'customer' && vendor && vendorEmail
+    ? draftNewSopEmail({
+        vendorEmail,
+        vendorName: vendor.name,
+        vendorCode: vendor.vendorCode ?? '',
+        processName: vendor.processName,
+        sopId: id,
+        effectiveDate: doc.activatedAt?.split('T')[0] ?? new Date().toISOString().split('T')[0],
+      })
+    : null;
 
   return (
     <main className="section">
@@ -91,20 +86,35 @@ export default async function SopReviewPage({ params }: { params: Promise<{ id: 
         </form>
       )}
 
-      {role === 'customer' && vendorEmail && (
+      {role === 'customer' && emailDraft && (
         <section style={{ marginTop: '2rem' }}>
           <h2>
             <span className="accent-bar" />
             Notify Vendor
           </h2>
-          <p>
+          <p style={{ marginBottom: 8 }}>
             Vendor contact: <strong>{vendorEmail}</strong>
           </p>
-          <a href={mailtoHref} className="btn-primary">
-            Email vendor about this SOP
-          </a>
-          <p style={{ marginTop: '0.5rem', fontSize: '0.85em', color: 'var(--color-text-muted, #6b7280)' }}>
-            Opens your mail client with a pre-filled notification. Attach the SOP file before sending.
+          <label style={{ marginBottom: 6 }}>Draft email — select all and copy, then send manually:</label>
+          <textarea
+            readOnly
+            defaultValue={emailDraft}
+            rows={14}
+            style={{
+              width: '100%',
+              fontFamily: 'monospace',
+              fontSize: 12,
+              padding: '12px 14px',
+              borderRadius: 6,
+              border: '1px solid var(--color-card-border)',
+              background: 'var(--color-bg-page)',
+              color: 'var(--color-text-body)',
+              resize: 'vertical',
+              lineHeight: 1.6,
+            }}
+          />
+          <p style={{ marginTop: 6, fontSize: 12, color: '#6b7280' }}>
+            Attach the SOP file before sending.
           </p>
         </section>
       )}

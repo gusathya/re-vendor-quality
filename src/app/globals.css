@@ -76,7 +76,7 @@ a:hover { text-decoration: underline; }
   margin-bottom: 24px;
 }
 .kpi-card {
-  background: white;
+  background: var(--color-card-bg);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
   padding: 16px 20px;
@@ -107,7 +107,7 @@ button:hover { opacity: 0.85; }
 
 /* ── Tables ── */
 .table-wrap { overflow-x: auto; border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
-table { width: 100%; border-collapse: collapse; background: white; font-size: 13px; }
+table { width: 100%; border-collapse: collapse; background: var(--color-card-bg); font-size: 13px; }
 thead th {
   background: var(--color-navy-primary);
   color: white;
@@ -119,11 +119,11 @@ thead th {
   letter-spacing: 0.06em;
   white-space: nowrap;
 }
-tbody td { padding: 9px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+tbody td { padding: 9px 14px; border-bottom: 1px solid var(--color-card-border); vertical-align: middle; }
 tbody tr:last-child td { border-bottom: none; }
-tbody tr:hover td { background: #f8fafc; }
-tbody tr.out-of-limit td { background: #fff1f2; }
-tbody tr.needs-review td { background: #fffbeb; }
+tbody tr:hover td { background: var(--color-row-hover, #f8fafc); }
+tbody tr.out-of-limit td { background: var(--color-row-fail, #fff1f2); }
+tbody tr.needs-review td { background: var(--color-row-warn, #fffbeb); }
 
 /* ── Badges ── */
 .badge {
@@ -157,7 +157,7 @@ input[type="password"], input[type="url"], input[type="date"], select, textarea 
   font-size: 13px;
   font-family: inherit;
   color: var(--color-text-body);
-  background: white;
+  background: var(--color-card-bg);
   outline: none;
   transition: border-color 0.15s;
   width: 100%;
@@ -167,7 +167,7 @@ label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 4px; c
 
 /* ── Chart card wrapper ── */
 .chart-card {
-  background: white;
+  background: var(--color-card-bg);
   border: 1px solid var(--color-card-border);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
@@ -182,3 +182,28 @@ label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 4px; c
   color: #6b7280;
   margin-bottom: 14px;
 }
+
+/* ── Dark mode ── */
+[data-theme="dark"] {
+  --color-text-body:     #d1d5db;
+  --color-text-heading:  #f3f4f6;
+  --color-bg-light-gray: #1f2937;
+  --color-nav-link:      #e5e7eb;
+  --color-success:       #4ade80;
+  --color-success-bg:    #14532d;
+  --color-danger:        #f87171;
+  --color-danger-bg:     #7f1d1d;
+  --color-warning:       #fbbf24;
+  --color-warning-bg:    #78350f;
+  --color-card-bg:       #1e2533;
+  --color-card-border:   #374151;
+  --color-bg-page:       #111827;
+  --color-row-hover:     #1f2937;
+  --color-row-fail:      #3b0f0f;
+  --color-row-warn:      #2d1a00;
+  --shadow-card: 0 1px 4px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
+}
+[data-theme="dark"] .chart-title            { color: #9ca3af; }
+[data-theme="dark"] .badge-unscored         { background: #374151; color: #9ca3af; }
+[data-theme="dark"] .badge-superseded       { background: #374151; color: #9ca3af; }
+[data-theme="dark"] .badge-draft            { background: #1e3a5f; color: #93c5fd; }
