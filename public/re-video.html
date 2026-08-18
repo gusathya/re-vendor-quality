@@ -1,0 +1,977 @@
+<title>RE Vendor Quality — Product Demo</title>
+<style>
+:root {
+  --navy: #1B2A4A;
+  --navy-deep: #14213D;
+  --red: #BF1E2E;
+  --white: #FFFFFF;
+  --gray: #F2F2F2;
+  --gray2: #E8EEF5;
+  --text: #1C1C1C;
+  --text-muted: #6B7280;
+  --pass-bg: #dcfce7; --pass-text: #166534;
+  --fail-bg: #fee2e2; --fail-text: #991b1b;
+  --warn-bg: #fef3c7; --warn-text: #92400e;
+  --border: #e5e7eb;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:#0d1117;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  min-height:100vh;
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+}
+#wrapper{width:100%;max-width:1000px;padding:0 12px;}
+#stage{
+  width:100%;aspect-ratio:16/9;
+  position:relative;background:var(--white);
+  overflow:hidden;
+  box-shadow:0 0 0 1px rgba(255,255,255,0.06),0 20px 60px rgba(0,0,0,0.8);
+}
+
+/* Frames */
+.fr{
+  position:absolute;inset:0 0 47px 0;
+  display:flex;flex-direction:column;
+  opacity:0;transition:opacity 0.55s ease;
+  pointer-events:none;
+}
+.fr.active{opacity:1;pointer-events:all;}
+
+/* Scene header */
+.sh{
+  background:var(--navy);color:white;
+  display:flex;align-items:center;
+  padding:0 20px;height:36px;flex-shrink:0;
+  gap:10px;
+}
+.logo{
+  font-family:'Courier New',monospace;font-size:13px;
+  font-weight:bold;letter-spacing:4px;color:var(--red);
+}
+.sh-div{width:1px;height:18px;background:rgba(255,255,255,0.15);}
+.sh-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.6);}
+.sh-scene{margin-left:auto;font-size:9px;letter-spacing:2px;color:rgba(191,30,46,0.8);font-family:'Courier New',monospace;}
+
+/* Content */
+.ca{flex:1;overflow:hidden;min-height:0;position:relative;}
+
+/* Subtitle */
+.sub{
+  position:absolute;bottom:0;left:0;right:0;
+  background:rgba(27,42,74,0.93);color:white;
+  padding:8px 24px;font-size:11.5px;line-height:1.55;
+  text-align:center;display:flex;align-items:center;justify-content:center;
+  min-height:46px;
+  backdrop-filter:blur(4px);
+}
+
+/* Progress + controls (above frames, z-indexed) */
+#ptrack{
+  position:absolute;bottom:44px;left:0;right:0;height:3px;
+  background:rgba(255,255,255,0.08);z-index:20;
+}
+#pfill{height:100%;background:var(--red);width:0%;transition:width 0.4s linear;}
+#controls{
+  position:absolute;bottom:0;left:0;right:0;height:44px;
+  background:var(--navy-deep);border-top:1px solid rgba(255,255,255,0.06);
+  display:flex;align-items:center;gap:6px;padding:0 14px;z-index:20;
+}
+#play-btn{
+  background:var(--red);color:white;border:none;
+  padding:5px 14px;font-size:9px;letter-spacing:2px;
+  cursor:pointer;text-transform:uppercase;font-family:'Courier New',monospace;
+  font-weight:bold;flex-shrink:0;
+}
+#play-btn:hover{background:#d42235;}
+.sb{
+  background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.55);
+  border:1px solid rgba(255,255,255,0.12);
+  padding:3px 8px;font-size:8px;letter-spacing:1px;
+  cursor:pointer;text-transform:uppercase;font-family:'Courier New',monospace;
+  transition:background 0.2s,color 0.2s;white-space:nowrap;
+}
+.sb:hover{background:rgba(255,255,255,0.14);color:white;}
+.sb.on{background:var(--red);color:white;border-color:var(--red);}
+#tdisp{
+  margin-left:auto;color:rgba(255,255,255,0.35);
+  font-size:10px;font-family:'Courier New',monospace;flex-shrink:0;
+}
+
+/* Section title with red bar */
+.stitle{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.stitle::before{content:'';display:block;width:3px;height:20px;background:var(--red);flex-shrink:0;}
+.stitle h2{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--navy);font-family:'Courier New',monospace;font-weight:bold;}
+
+/* KPI strip */
+.kpi-row{background:var(--navy);display:flex;}
+.kpi{flex:1;padding:14px 18px;border-right:1px solid rgba(255,255,255,0.08);}
+.kpi:last-child{border-right:none;}
+.kv{font-size:28px;font-family:'Courier New',monospace;font-weight:bold;color:white;line-height:1;}
+.kv.g{color:#4ade80;} .kv.b{color:#f87171;} .kv.w{color:#fbbf24;}
+.kl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-top:4px;}
+
+/* Tab strip */
+.tabs{display:flex;background:var(--gray);border-bottom:2px solid var(--border);}
+.tab{padding:7px 14px;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);cursor:default;font-family:'Courier New',monospace;}
+.tab.on{color:var(--red);border-bottom:2px solid var(--red);margin-bottom:-2px;font-weight:bold;}
+
+/* Data table */
+.dt{width:100%;border-collapse:collapse;font-size:11px;}
+.dt th{background:var(--navy);color:white;padding:7px 10px;text-align:left;font-size:8px;letter-spacing:1px;text-transform:uppercase;font-weight:600;}
+.dt td{padding:6px 10px;border-bottom:1px solid var(--border);}
+.dt tr.pass td{background:white;}
+.dt tr.fail td{background:#fff5f5;}
+.dt tr.fail td:first-child{border-left:3px solid var(--red);}
+.badge{display:inline-block;padding:1px 7px;font-size:9px;font-weight:bold;letter-spacing:0.5px;font-family:'Courier New',monospace;}
+.badge.p{background:var(--pass-bg);color:var(--pass-text);}
+.badge.f{background:var(--fail-bg);color:var(--fail-text);}
+.badge.r{background:var(--warn-bg);color:var(--warn-text);}
+
+/* Row animation */
+.ra{opacity:0;transform:translateX(-10px);}
+.ra.in{animation:sli 0.35s ease forwards;}
+@keyframes sli{to{opacity:1;transform:translateX(0);}}
+
+/* Hotspot bar */
+.hbar-wrap{height:7px;background:var(--gray);border-radius:2px;overflow:hidden;margin-top:3px;}
+.hbar{height:100%;border-radius:2px;transition:width 1s ease;}
+
+/* Reduced motion */
+@media(prefers-reduced-motion:reduce){
+  .fr{transition:none;}
+  .ra.in{animation:none;opacity:1;transform:none;}
+  .hbar{transition:none;}
+}
+</style>
+
+<div id="wrapper">
+<div id="stage">
+
+<!-- FRAME 0: Plating Line (0–14s) -->
+<div class="fr active" id="f0">
+  <div class="sh">
+    <div class="logo">RE</div><div class="sh-div"></div>
+    <div class="sh-title">Vendor Quality Dashboard — The Process</div>
+    <div class="sh-scene">SCENE 1 / 5</div>
+  </div>
+  <div class="ca" style="background:#EEF3F8;">
+    <svg viewBox="0 0 880 390" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+      <rect width="880" height="390" fill="#EEF3F8"/>
+      <!-- Floor -->
+      <line x1="0" y1="310" x2="880" y2="310" stroke="#C8D4E0" stroke-width="2"/>
+      <!-- Shadow under tanks -->
+      <ellipse cx="100" cy="312" rx="52" ry="6" fill="rgba(0,0,0,0.06)"/>
+      <ellipse cx="230" cy="312" rx="58" ry="6" fill="rgba(0,0,0,0.06)"/>
+      <ellipse cx="370" cy="312" rx="52" ry="6" fill="rgba(0,0,0,0.06)"/>
+      <ellipse cx="500" cy="312" rx="55" ry="6" fill="rgba(0,0,0,0.06)"/>
+      <ellipse cx="630" cy="312" rx="50" ry="6" fill="rgba(0,0,0,0.06)"/>
+      <!-- Overhead conveyor rail -->
+      <rect x="40" y="72" width="760" height="10" rx="5" fill="#8A9BB0"/>
+      <rect x="42" y="74" width="756" height="6" rx="3" fill="url(#railgrad)"/>
+      <defs>
+        <linearGradient id="railgrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#A0B0C8"/>
+          <stop offset="100%" stop-color="#6A7D96"/>
+        </linearGradient>
+        <linearGradient id="tg1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#D4E4F4"/>
+          <stop offset="100%" stop-color="#B0C8E0"/>
+        </linearGradient>
+        <linearGradient id="tg2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#C0D8F0"/>
+          <stop offset="100%" stop-color="#90B4D4"/>
+        </linearGradient>
+        <linearGradient id="tg3" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#F0D8C0"/>
+          <stop offset="100%" stop-color="#D8A880"/>
+        </linearGradient>
+        <marker id="arr" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
+          <path d="M0,1 L6,3.5 L0,6Z" fill="#1B2A4A"/>
+        </marker>
+      </defs>
+      <!-- Hangers -->
+      <line x1="100" y1="82" x2="100" y2="118" stroke="#8A9BB0" stroke-width="2.5"/>
+      <line x1="230" y1="82" x2="230" y2="118" stroke="#8A9BB0" stroke-width="2.5"/>
+      <line x1="370" y1="82" x2="370" y2="118" stroke="#8A9BB0" stroke-width="2.5"/>
+      <line x1="500" y1="82" x2="500" y2="118" stroke="#8A9BB0" stroke-width="2.5"/>
+      <line x1="630" y1="82" x2="630" y2="118" stroke="#8A9BB0" stroke-width="2.5"/>
+      <!-- Parts on conveyor -->
+      <g><rect x="86" y="112" width="28" height="20" rx="3" fill="#C4D0E0" stroke="#8A9BB0" stroke-width="1.2"/>
+         <rect x="90" y="116" width="20" height="12" rx="1" fill="#A0B4CC"/></g>
+      <g><rect x="216" y="112" width="28" height="20" rx="3" fill="#C4D0E0" stroke="#8A9BB0" stroke-width="1.2"/>
+         <rect x="220" y="116" width="20" height="12" rx="1" fill="#A0B4CC"/></g>
+      <g><rect x="356" y="112" width="28" height="20" rx="3" fill="#C4D0E0" stroke="#8A9BB0" stroke-width="1.2"/>
+         <rect x="360" y="116" width="20" height="12" rx="1" fill="#A0B4CC"/></g>
+
+      <!-- TANK 1: Degreasing -->
+      <rect x="52" y="175" width="96" height="132" rx="4" fill="white" stroke="#8A9BB0" stroke-width="2"/>
+      <rect x="52" y="175" width="96" height="32" rx="4" fill="#6B8DAE"/>
+      <text x="100" y="195" text-anchor="middle" fill="white" font-size="9" font-family="Courier New,monospace" font-weight="bold">DEGREASE</text>
+      <rect x="56" y="211" width="88" height="92" fill="url(#tg1)" opacity="0.8"/>
+      <text x="100" y="258" text-anchor="middle" fill="#1B2A4A" font-size="9" font-family="Courier New,monospace" font-weight="bold">55°C</text>
+      <!-- Steam wisps -->
+      <path d="M74 207 Q76 200 74 193 Q72 186 74 179" stroke="#B0C4D8" stroke-width="1.5" fill="none" opacity="0.7"/>
+      <path d="M100 205 Q102 198 100 191 Q98 184 100 177" stroke="#B0C4D8" stroke-width="1.5" fill="none" opacity="0.7"/>
+      <path d="M126 207 Q128 200 126 193 Q124 186 126 179" stroke="#B0C4D8" stroke-width="1.5" fill="none" opacity="0.7"/>
+
+      <!-- TANK 2: Zinc Plating (hero tank, navy border) -->
+      <rect x="172" y="165" width="114" height="142" rx="4" fill="white" stroke="#1B2A4A" stroke-width="2.5"/>
+      <rect x="172" y="165" width="114" height="34" rx="4" fill="#1B2A4A"/>
+      <text x="229" y="183" text-anchor="middle" fill="white" font-size="9" font-family="Courier New,monospace" font-weight="bold">ZINC PLATING</text>
+      <text x="229" y="195" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="7" font-family="Courier New,monospace">ZnFe + Trivalent Cr</text>
+      <rect x="176" y="203" width="106" height="100" fill="url(#tg2)" opacity="0.85"/>
+      <!-- Electrodes -->
+      <line x1="190" y1="208" x2="190" y2="296" stroke="#666" stroke-width="4" stroke-linecap="round"/>
+      <line x1="268" y1="208" x2="268" y2="296" stroke="#666" stroke-width="4" stroke-linecap="round"/>
+      <text x="229" y="255" text-anchor="middle" fill="#1B2A4A" font-size="10" font-family="Courier New,monospace" font-weight="bold">22°C</text>
+      <!-- Bubbles -->
+      <circle cx="210" cy="280" r="3" fill="none" stroke="#8AAAC8" stroke-width="1" opacity="0.9"/>
+      <circle cx="229" cy="274" r="2" fill="none" stroke="#8AAAC8" stroke-width="1" opacity="0.9"/>
+      <circle cx="250" cy="282" r="3.5" fill="none" stroke="#8AAAC8" stroke-width="1" opacity="0.9"/>
+      <circle cx="218" cy="265" r="1.5" fill="none" stroke="#8AAAC8" stroke-width="1" opacity="0.7"/>
+
+      <!-- TANK 3: Hot Rinse -->
+      <rect x="314" y="180" width="96" height="128" rx="4" fill="white" stroke="#8A9BB0" stroke-width="2"/>
+      <rect x="314" y="180" width="96" height="30" rx="4" fill="#6B8DAE"/>
+      <text x="362" y="197" text-anchor="middle" fill="white" font-size="9" font-family="Courier New,monospace" font-weight="bold">HOT RINSE</text>
+      <rect x="318" y="214" width="88" height="90" fill="#C8E4F8" opacity="0.6"/>
+      <text x="362" y="262" text-anchor="middle" fill="#1B2A4A" font-size="9" font-family="Courier New,monospace" font-weight="bold">65°C</text>
+      <path d="M338 210 Q340 203 338 196 Q336 190 338 183" stroke="#B0C4D8" stroke-width="1.5" fill="none" opacity="0.7"/>
+      <path x="362" y="210" d="M362 210 Q364 203 362 196" stroke="#B0C4D8" stroke-width="1.5" fill="none" opacity="0.7"/>
+
+      <!-- TANK 4: Passivation (red border - key step) -->
+      <rect x="438" y="170" width="108" height="138" rx="4" fill="white" stroke="#BF1E2E" stroke-width="2.5"/>
+      <rect x="438" y="170" width="108" height="34" rx="4" fill="#BF1E2E"/>
+      <text x="492" y="188" text-anchor="middle" fill="white" font-size="9" font-family="Courier New,monospace" font-weight="bold">PASSIVATION</text>
+      <text x="492" y="200" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="7" font-family="Courier New,monospace">Trivalent Cr(III)</text>
+      <rect x="442" y="208" width="100" height="96" fill="url(#tg3)" opacity="0.7"/>
+      <text x="492" y="258" text-anchor="middle" fill="#7A1018" font-size="10" font-family="Courier New,monospace" font-weight="bold">RT</text>
+      <text x="492" y="272" text-anchor="middle" fill="#7A1018" font-size="8" font-family="Courier New,monospace">30–60 sec</text>
+
+      <!-- TANK 5: Cold Rinse -->
+      <rect x="572" y="184" width="92" height="124" rx="4" fill="white" stroke="#8A9BB0" stroke-width="2"/>
+      <rect x="572" y="184" width="92" height="28" rx="4" fill="#6B8DAE"/>
+      <text x="618" y="201" text-anchor="middle" fill="white" font-size="9" font-family="Courier New,monospace" font-weight="bold">COLD RINSE</text>
+      <rect x="576" y="216" width="84" height="88" fill="#D8F0FC" opacity="0.55"/>
+      <text x="618" y="260" text-anchor="middle" fill="#1B2A4A" font-size="9" font-family="Courier New,monospace" font-weight="bold">RT</text>
+
+      <!-- Flow arrows -->
+      <line x1="151" y1="240" x2="169" y2="240" stroke="#1B2A4A" stroke-width="2" marker-end="url(#arr)"/>
+      <line x1="289" y1="240" x2="311" y2="240" stroke="#1B2A4A" stroke-width="2" marker-end="url(#arr)"/>
+      <line x1="413" y1="240" x2="435" y2="240" stroke="#1B2A4A" stroke-width="2" marker-end="url(#arr)"/>
+      <line x1="549" y1="240" x2="569" y2="240" stroke="#1B2A4A" stroke-width="2" marker-end="url(#arr)"/>
+
+      <!-- Worker with clipboard -->
+      <g transform="translate(736,195)">
+        <circle cx="0" cy="0" r="16" fill="#F5DEB3"/>
+        <ellipse cx="0" cy="-11" rx="18" ry="10" fill="#E8B800"/>
+        <rect x="-18" y="-11" width="36" height="5" rx="2" fill="#E8B800"/>
+        <rect x="-14" y="14" width="28" height="46" rx="5" fill="#2A4A7A"/>
+        <rect x="-14" y="14" width="14" height="46" rx="5" fill="#1B3A6A" opacity="0.4"/>
+        <line x1="-14" y1="28" x2="-28" y2="58" stroke="#2A4A7A" stroke-width="6" stroke-linecap="round"/>
+        <line x1="14" y1="28" x2="32" y2="34" stroke="#2A4A7A" stroke-width="6" stroke-linecap="round"/>
+        <rect x="28" y="26" width="22" height="30" rx="3" fill="#D4B896"/>
+        <rect x="30" y="32" width="18" height="2" fill="#9A8070"/>
+        <rect x="30" y="37" width="18" height="2" fill="#9A8070"/>
+        <rect x="30" y="42" width="18" height="2" fill="#9A8070"/>
+        <rect x="30" y="47" width="12" height="2" fill="#9A8070"/>
+        <rect x="34" y="23" width="10" height="6" rx="1" fill="#A8997A"/>
+        <line x1="-5" y1="60" x2="-8" y2="96" stroke="#1B2A4A" stroke-width="7" stroke-linecap="round"/>
+        <line x1="5" y1="60" x2="8" y2="96" stroke="#1B2A4A" stroke-width="7" stroke-linecap="round"/>
+      </g>
+
+      <!-- Title banner -->
+      <rect x="0" y="330" width="880" height="60" fill="rgba(27,42,74,0.04)"/>
+      <text x="440" y="358" text-anchor="middle" fill="#1B2A4A" font-size="22" font-family="Courier New,monospace" font-weight="bold" letter-spacing="5">ROYAL ENFIELD VENDOR QUALITY</text>
+      <text x="440" y="378" text-anchor="middle" fill="#BF1E2E" font-size="10" font-family="Courier New,monospace" letter-spacing="4">SOP-DRIVEN PLATING &amp; HEAT TREATMENT QUALITY PLATFORM</text>
+    </svg>
+  </div>
+  <div class="sub">Royal Enfield's plating vendors run 23+ process stations — each with precise chemical and temperature limits defined in their approved SOP.</div>
+</div>
+
+<!-- FRAME 1: Excel Chaos (14–28s) -->
+<div class="fr" id="f1">
+  <div class="sh">
+    <div class="logo">RE</div><div class="sh-div"></div>
+    <div class="sh-title">The Problem — Manual Quality Today</div>
+    <div class="sh-scene">SCENE 1 / 5</div>
+  </div>
+  <div class="ca" style="display:flex;background:var(--gray);">
+    <!-- Left mini plating -->
+    <div style="width:42%;background:#E4EDF5;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:12px;">
+      <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--navy);font-family:'Courier New',monospace;font-weight:bold;">23 PROCESS STATIONS</div>
+      <svg viewBox="0 0 300 160" style="width:100%;max-width:290px;" xmlns="http://www.w3.org/2000/svg">
+        <rect width="300" height="160" fill="#EAF0F8"/>
+        <rect x="5" y="28" width="290" height="7" rx="3" fill="#8A9BB0"/>
+        <rect x="10" y="60" width="48" height="70" rx="3" fill="#C4D4E8" stroke="#8A9BB0" stroke-width="1.5"/>
+        <text x="34" y="98" text-anchor="middle" fill="#1B2A4A" font-size="7" font-family="Courier New">DEGREASE</text>
+        <rect x="70" y="54" width="54" height="76" rx="3" fill="#A8C4E0" stroke="#1B2A4A" stroke-width="1.5"/>
+        <text x="97" y="92" text-anchor="middle" fill="#1B2A4A" font-size="7" font-family="Courier New">Zn PLATE</text>
+        <rect x="138" y="62" width="48" height="68" rx="3" fill="#C4DCF0" stroke="#8A9BB0" stroke-width="1.5"/>
+        <text x="162" y="98" text-anchor="middle" fill="#1B2A4A" font-size="7" font-family="Courier New">RINSE</text>
+        <rect x="200" y="58" width="52" height="72" rx="3" fill="#F0CCC0" stroke="#BF1E2E" stroke-width="1.5"/>
+        <text x="226" y="94" text-anchor="middle" fill="#8B1520" font-size="7" font-family="Courier New">PASSIV.</text>
+        <rect x="264" y="64" width="28" height="66" rx="3" fill="#C4DCF0" stroke="#8A9BB0" stroke-width="1.5"/>
+        <text x="278" y="98" text-anchor="middle" fill="#1B2A4A" font-size="6" font-family="Courier New">RINSE</text>
+        <line x1="61" y1="96" x2="68" y2="96" stroke="#1B2A4A" stroke-width="1.5" marker-end="url(#a2)"/>
+        <line x1="127" y1="96" x2="135" y2="96" stroke="#1B2A4A" stroke-width="1.5" marker-end="url(#a2)"/>
+        <line x1="189" y1="96" x2="197" y2="96" stroke="#1B2A4A" stroke-width="1.5" marker-end="url(#a2)"/>
+        <line x1="255" y1="96" x2="261" y2="96" stroke="#1B2A4A" stroke-width="1.5" marker-end="url(#a2)"/>
+        <defs><marker id="a2" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto"><path d="M0,0.5 L4,2.5 L0,4.5Z" fill="#1B2A4A"/></marker></defs>
+        <text x="150" y="148" text-anchor="middle" fill="#1B2A4A" font-size="9" font-family="Courier New" font-weight="bold">UNIQUE PLATERS</text>
+      </svg>
+      <div style="background:var(--navy);color:white;padding:5px 14px;font-size:9px;letter-spacing:3px;font-family:'Courier New',monospace;">RE VENDOR PARTNER</div>
+    </div>
+    <!-- Right Excel chaos -->
+    <div style="flex:1;background:white;padding:14px;display:flex;flex-direction:column;gap:9px;overflow:hidden;">
+      <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--red);font-family:'Courier New',monospace;font-weight:bold;">TODAY'S REALITY</div>
+      <div style="border:2px solid #107C41;border-radius:3px;overflow:hidden;flex:1;">
+        <div style="background:#107C41;color:white;padding:4px 10px;font-size:9.5px;font-family:'Courier New',monospace;">📊 OK_LoadReport_2025-08-18_003.xls — Excel</div>
+        <table style="width:100%;border-collapse:collapse;font-size:10px;font-family:'Courier New',monospace;">
+          <tr style="background:#E2EFDA;">
+            <td style="padding:3px 7px;border:1px solid #ccc;font-weight:bold;color:#107C41;">Station Name</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;font-weight:bold;color:#107C41;">Temp</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;font-weight:bold;color:#107C41;">Dip Time</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;font-weight:bold;color:#107C41;">SOP Limit</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;font-weight:bold;color:#107C41;">Pass?</td>
+          </tr>
+          <tr>
+            <td style="padding:3px 7px;border:1px solid #ccc;">Degreasing</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;">54.2°C</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;">89s</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;color:#aaa;">→ Check SOP tab...</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;color:#aaa;">?</td>
+          </tr>
+          <tr style="background:#FFF0F0;">
+            <td style="padding:3px 7px;border:1px solid #ccc;">Zinc Plating</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;color:#BF1E2E;font-weight:bold;">24.8°C ⚠</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;">45min</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;color:#aaa;">See Process Chart p.12</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;">❌</td>
+          </tr>
+          <tr>
+            <td style="padding:3px 7px;border:1px solid #ccc;">Hot Water Rinse</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;">63.1°C</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;">120s</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;color:#aaa;">→ Check SOP tab...</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;color:#aaa;">?</td>
+          </tr>
+          <tr style="background:#FFF8E1;">
+            <td style="padding:3px 7px;border:1px solid #ccc;">Passivation</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;">22.0°C</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;color:#d97706;font-weight:bold;">28s ⚠</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;color:#aaa;">30–60 sec (Ctrl limit)</td>
+            <td style="padding:3px 7px;border:1px solid #ccc;color:#d97706;">❓</td>
+          </tr>
+          <tr style="background:#F5F5F5;">
+            <td colspan="5" style="padding:4px 7px;border:1px solid #ccc;color:#aaa;font-style:italic;font-size:9px;">...19 more stations — manually cross-reference SOP Excel each time...</td>
+          </tr>
+        </table>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="font-size:10.5px;color:var(--text);display:flex;align-items:center;gap:7px;"><span style="color:var(--red);font-weight:bold;font-size:13px;">✕</span>SOP limits scattered across 41 rows in a separate Excel workbook</div>
+        <div style="font-size:10.5px;color:var(--text);display:flex;align-items:center;gap:7px;"><span style="color:var(--red);font-weight:bold;font-size:13px;">✕</span>Manual cross-referencing — errors stay hidden for days or weeks</div>
+        <div style="font-size:10.5px;color:var(--text);display:flex;align-items:center;gap:7px;"><span style="color:var(--red);font-weight:bold;font-size:13px;">✕</span>Root-cause on a failed batch takes hours, not seconds</div>
+      </div>
+    </div>
+  </div>
+  <div class="sub">Quality monitoring lives in Excel spreadsheets and memory. When a batch fails, the root cause takes days to find — and vendors get blamed by default.</div>
+</div>
+
+<!-- FRAME 2: Dashboard Hero (28–50s) -->
+<div class="fr" id="f2">
+  <div class="sh">
+    <div class="logo">RE</div><div class="sh-div"></div>
+    <div class="sh-title">The Solution — Live Quality Intelligence</div>
+    <div class="sh-scene">SCENE 2 / 5</div>
+  </div>
+  <div class="ca" style="display:flex;flex-direction:column;background:white;">
+    <div class="kpi-row">
+      <div class="kpi"><div class="kv g" id="kv1">94.2%</div><div class="kl">Pass Rate — This Month</div></div>
+      <div class="kpi"><div class="kv" id="kv2">87</div><div class="kl">Loads Scored</div></div>
+      <div class="kpi"><div class="kv b" id="kv3">3</div><div class="kl">Out-of-Limit Today</div></div>
+      <div class="kpi"><div class="kv w" id="kv4">23</div><div class="kl">Stations Monitored</div></div>
+    </div>
+    <div class="tabs">
+      <div class="tab on">Table</div>
+      <div class="tab">Trends</div>
+      <div class="tab">Hotspots</div>
+      <div class="tab">Compare</div>
+      <div class="tab">Capability</div>
+    </div>
+    <div style="flex:1;overflow:hidden;padding:10px 12px;">
+      <table class="dt" style="width:100%;">
+        <thead><tr>
+          <th>Load No.</th><th>Date / Time</th><th>Part</th><th>Stations</th>
+          <th>Pass</th><th>Fail</th><th>Rate</th><th>Status</th>
+        </tr></thead>
+        <tbody id="dtbody">
+          <tr class="pass ra" data-d="0"><td>LD-2025-0087</td><td>Aug 18, 09:14</td><td>Engine Mount Bracket</td><td>23</td><td>23</td><td>0</td><td><span style="color:var(--pass-text);font-weight:bold;">100%</span></td><td><span class="badge p">PASS</span></td></tr>
+          <tr class="pass ra" data-d="120"><td>LD-2025-0086</td><td>Aug 18, 07:02</td><td>Footrest Assembly</td><td>23</td><td>22</td><td>1</td><td><span style="color:var(--pass-text);font-weight:bold;">96%</span></td><td><span class="badge p">PASS</span></td></tr>
+          <tr class="fail ra" data-d="240"><td>LD-2025-0085</td><td>Aug 17, 16:48</td><td>Chain Sprocket Cover</td><td>23</td><td>19</td><td>4</td><td><span style="color:var(--fail-text);font-weight:bold;">83%</span></td><td><span class="badge f">FAIL</span></td></tr>
+          <tr class="pass ra" data-d="360"><td>LD-2025-0084</td><td>Aug 17, 14:22</td><td>Frame Bracket Set</td><td>23</td><td>23</td><td>0</td><td><span style="color:var(--pass-text);font-weight:bold;">100%</span></td><td><span class="badge p">PASS</span></td></tr>
+          <tr class="fail ra" data-d="480"><td>LD-2025-0083</td><td>Aug 17, 11:05</td><td>Handle Bar Clamp</td><td>23</td><td>20</td><td>3</td><td><span style="color:var(--fail-text);font-weight:bold;">87%</span></td><td><span class="badge f">FAIL</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="sub">Every load, scored in real time against your SOP. Every drift, caught before it ships. Five analytics views from one data pipeline.</div>
+</div>
+
+<!-- FRAME 3: SOP Upload & Parse (50–70s) -->
+<div class="fr" id="f3">
+  <div class="sh">
+    <div class="logo">RE</div><div class="sh-div"></div>
+    <div class="sh-title">Feature 1 — SOP Intelligence Engine</div>
+    <div class="sh-scene">SCENE 3 / 5</div>
+  </div>
+  <div class="ca" style="display:flex;background:var(--gray);gap:0;overflow:hidden;">
+    <div style="width:44%;display:flex;flex-direction:column;padding:14px;gap:10px;border-right:1px solid var(--border);background:white;">
+      <div class="stitle"><h2>SOP Upload</h2></div>
+      <div style="border:2px dashed var(--navy);background:var(--gray);padding:18px;text-align:center;border-radius:3px;">
+        <div style="font-size:28px;margin-bottom:6px;">📋</div>
+        <div style="font-size:11px;color:var(--navy);font-weight:bold;font-family:'Courier New',monospace;">Unique_Enterprises_Process_Chart.xlsx</div>
+        <div style="font-size:9.5px;color:var(--text-muted);margin-top:3px;">41 process steps · Spec Limits · Control Limits · Impurities</div>
+        <div style="background:var(--red);color:white;padding:6px 18px;font-size:9px;letter-spacing:2px;font-family:'Courier New',monospace;display:inline-block;margin-top:10px;cursor:default;">PARSE SOP →</div>
+      </div>
+      <div style="background:white;padding:9px 11px;border-left:4px solid #16a34a;border:1px solid #d1fae5;border-left:4px solid #16a34a;">
+        <div style="font-weight:bold;color:var(--pass-text);font-size:11px;">✓ Extraction Complete</div>
+        <div style="color:var(--text-muted);margin-top:3px;font-size:10.5px;">41 stations parsed · <strong>127 parameters</strong> extracted</div>
+        <div style="color:#9CA3AF;font-size:9.5px;margin-top:2px;">3 rows flagged for manual review (unparseable format)</div>
+      </div>
+      <div style="background:#fffbeb;padding:8px 10px;border-left:4px solid #f59e0b;font-size:10px;color:var(--warn-text);">
+        ⚠ 23 station-name aliases auto-matched to SOP. Review before activating.
+      </div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;padding:14px;gap:10px;overflow:hidden;background:white;">
+      <div class="stitle"><h2>Human Review — Confirm Before Activation</h2></div>
+      <div style="flex:1;overflow:hidden;">
+        <table style="width:100%;border-collapse:collapse;font-size:10.5px;">
+          <thead>
+            <tr style="background:var(--navy);">
+              <th style="padding:6px 9px;color:white;text-align:left;font-size:8px;letter-spacing:1px;">STATION</th>
+              <th style="padding:6px 9px;color:white;text-align:left;font-size:8px;letter-spacing:1px;">PARAMETER</th>
+              <th style="padding:6px 9px;color:white;text-align:right;font-size:8px;letter-spacing:1px;">MIN</th>
+              <th style="padding:6px 9px;color:white;text-align:right;font-size:8px;letter-spacing:1px;">MAX</th>
+              <th style="padding:6px 9px;color:white;text-align:center;font-size:8px;letter-spacing:1px;">UNIT</th>
+              <th style="padding:6px 9px;color:white;text-align:center;font-size:8px;letter-spacing:1px;">STATUS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background:#f0fdf4;"><td style="padding:5px 9px;border-bottom:1px solid var(--border);">Zinc Plating</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);">Temperature</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;">20</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;">25</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);text-align:center;">°C</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);text-align:center;"><span class="badge p">✓ OK</span></td></tr>
+            <tr><td style="padding:5px 9px;border-bottom:1px solid var(--border);">Zinc Plating</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);">pH</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;">5.5</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;">6.5</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);text-align:center;">—</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);text-align:center;"><span class="badge p">✓ OK</span></td></tr>
+            <tr style="background:#fffbeb;"><td style="padding:5px 9px;border-bottom:1px solid var(--border);">Degreasing</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);">Temperature</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);text-align:right;color:#d97706;">—</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);text-align:right;color:#d97706;">—</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);text-align:center;">°C</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);text-align:center;"><span class="badge r">REVIEW</span></td></tr>
+            <tr style="background:#f0fdf4;"><td style="padding:5px 9px;border-bottom:1px solid var(--border);">Hot Rinse</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);">Temperature</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;">60</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums;">70</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);text-align:center;">°C</td><td style="padding:5px 9px;border-bottom:1px solid var(--border);text-align:center;"><span class="badge p">✓ OK</span></td></tr>
+            <tr><td style="padding:5px 9px;">Passivation</td><td style="padding:5px 9px;">Dip Time</td><td style="padding:5px 9px;text-align:right;font-variant-numeric:tabular-nums;">30</td><td style="padding:5px 9px;text-align:right;font-variant-numeric:tabular-nums;">60</td><td style="padding:5px 9px;text-align:center;">sec</td><td style="padding:5px 9px;text-align:center;"><span class="badge p">✓ OK</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="background:var(--red);color:white;padding:7px 16px;font-size:9px;letter-spacing:2px;font-family:'Courier New',monospace;display:inline-block;cursor:default;align-self:flex-start;">ACTIVATE SOP →</div>
+    </div>
+  </div>
+  <div class="sub">Upload your approved SOP once. The platform reads every station, every parameter, every limit — automatically. A human confirms before any data scores against it.</div>
+</div>
+
+<!-- FRAME 4: Load Scoring (70–90s) -->
+<div class="fr" id="f4">
+  <div class="sh">
+    <div class="logo">RE</div><div class="sh-div"></div>
+    <div class="sh-title">Feature 2 — Automated Load Scoring</div>
+    <div class="sh-scene">SCENE 3 / 5</div>
+  </div>
+  <div class="ca" style="display:flex;background:white;gap:0;overflow:hidden;">
+    <div style="width:190px;flex-shrink:0;display:flex;flex-direction:column;padding:14px;gap:10px;border-right:1px solid var(--border);background:var(--gray);">
+      <div class="stitle"><h2>Load #85</h2></div>
+      <div style="background:white;padding:10px;font-size:10.5px;display:flex;flex-direction:column;gap:5px;border:1px solid var(--border);">
+        <div><span style="color:var(--text-muted);font-size:9px;">PART</span><br/><strong>Chain Sprocket Cover</strong></div>
+        <div><span style="color:var(--text-muted);font-size:9px;">WEIGHT</span><br/><strong>4.2 kg</strong></div>
+        <div><span style="color:var(--text-muted);font-size:9px;">IN → OUT</span><br/><strong>16:48 → 19:12</strong></div>
+        <div><span style="color:var(--text-muted);font-size:9px;">STATIONS</span><br/><strong>23</strong></div>
+      </div>
+      <div style="background:var(--fail-bg);border:1px solid #fca5a5;padding:10px;font-size:11px;">
+        <div style="font-weight:bold;color:var(--fail-text);font-size:16px;font-family:'Courier New',monospace;">4 FAIL</div>
+        <div style="color:var(--fail-text);font-size:9px;margin-top:1px;">out of 23 stations</div>
+        <div style="margin-top:7px;font-size:10px;color:var(--text-muted);">Pass Rate: <strong style="color:var(--fail-text);">83%</strong></div>
+      </div>
+      <div style="background:var(--navy);color:white;padding:8px 10px;font-size:8px;letter-spacing:1.5px;font-family:'Courier New',monospace;text-align:center;cursor:default;">
+        📤 LOAD REPORT UPLOADED<br/><span style="color:rgba(255,255,255,0.5);font-size:7px;margin-top:2px;display:block;">OK_LoadReport_2025-08-18.xls</span>
+      </div>
+    </div>
+    <div style="flex:1;overflow:auto;">
+      <table class="dt" style="width:100%;">
+        <thead><tr>
+          <th>#</th><th>Station Name</th><th>Parameter</th><th style="text-align:right;">Reading</th>
+          <th style="text-align:right;">Min</th><th style="text-align:right;">Max</th><th>Unit</th><th>Result</th>
+        </tr></thead>
+        <tbody>
+          <tr class="pass"><td>1</td><td>Pre-Clean Degreasing</td><td>Temperature</td><td style="text-align:right;font-variant-numeric:tabular-nums;">54.2</td><td style="text-align:right;">50</td><td style="text-align:right;">65</td><td>°C</td><td><span class="badge p">PASS</span></td></tr>
+          <tr class="pass"><td>2</td><td>Cold Water Rinse</td><td>Dip Time</td><td style="text-align:right;font-variant-numeric:tabular-nums;">62</td><td style="text-align:right;">60</td><td style="text-align:right;">—</td><td>sec</td><td><span class="badge p">PASS</span></td></tr>
+          <tr class="fail"><td>3</td><td>Zinc Plating Bath</td><td>Temperature</td><td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:bold;color:var(--fail-text);">24.8</td><td style="text-align:right;">20</td><td style="text-align:right;">23</td><td>°C</td><td><span class="badge f">FAIL ▲</span></td></tr>
+          <tr class="pass"><td>4</td><td>Zinc Plating Bath</td><td>Dip Time</td><td style="text-align:right;font-variant-numeric:tabular-nums;">47</td><td style="text-align:right;">40</td><td style="text-align:right;">60</td><td>min</td><td><span class="badge p">PASS</span></td></tr>
+          <tr class="pass"><td>5</td><td>Hot Water Rinse</td><td>Temperature</td><td style="text-align:right;font-variant-numeric:tabular-nums;">63.1</td><td style="text-align:right;">60</td><td style="text-align:right;">70</td><td>°C</td><td><span class="badge p">PASS</span></td></tr>
+          <tr class="fail"><td>7</td><td>Passivation</td><td>Dip Time</td><td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:bold;color:var(--fail-text);">28</td><td style="text-align:right;">30</td><td style="text-align:right;">60</td><td>sec</td><td><span class="badge f">FAIL ▼</span></td></tr>
+          <tr class="pass"><td>9</td><td>Anodic Cleaning</td><td>Temperature</td><td style="text-align:right;font-variant-numeric:tabular-nums;">58.4</td><td style="text-align:right;">50</td><td style="text-align:right;">65</td><td>°C</td><td><span class="badge p">PASS</span></td></tr>
+          <tr class="fail"><td>12</td><td>Alkaline Degreasing</td><td>Temperature</td><td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:bold;color:var(--fail-text);">72.3</td><td style="text-align:right;">55</td><td style="text-align:right;">70</td><td>°C</td><td><span class="badge f">FAIL ▲</span></td></tr>
+          <tr class="pass"><td>14</td><td>Drag-Out Rinse</td><td>Dip Time</td><td style="text-align:right;font-variant-numeric:tabular-nums;">45</td><td style="text-align:right;">30</td><td style="text-align:right;">—</td><td>sec</td><td><span class="badge p">PASS</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="sub">Upload each PLC load report from the shop floor. Every station reading is scored against SOP limits instantly. Red rows need action — before the batch ships.</div>
+</div>
+
+<!-- FRAME 5: Analytics (90–110s) -->
+<div class="fr" id="f5">
+  <div class="sh">
+    <div class="logo">RE</div><div class="sh-div"></div>
+    <div class="sh-title">Feature 3 — Five Analytics Views</div>
+    <div class="sh-scene">SCENE 3 / 5</div>
+  </div>
+  <div class="ca" style="display:flex;flex-direction:column;background:var(--gray);">
+    <div class="tabs">
+      <div class="tab">Table</div>
+      <div class="tab on">Trends</div>
+      <div class="tab">Hotspots</div>
+      <div class="tab">Compare</div>
+      <div class="tab">Capability</div>
+    </div>
+    <div style="flex:1;display:flex;gap:12px;padding:12px;overflow:hidden;min-height:0;">
+      <!-- Trend chart -->
+      <div style="flex:1;background:white;padding:12px;display:flex;flex-direction:column;gap:8px;overflow:hidden;">
+        <div style="font-size:9px;letter-spacing:2px;color:var(--navy);font-family:'Courier New',monospace;font-weight:bold;">ZINC BATH TEMPERATURE — LAST 30 LOADS</div>
+        <svg viewBox="0 0 440 170" width="100%" style="flex:1;" xmlns="http://www.w3.org/2000/svg">
+          <!-- SOP band -->
+          <rect x="44" y="36" width="386" height="56" fill="#dcfce7" opacity="0.65"/>
+          <text x="436" y="32" text-anchor="end" fill="#166534" font-size="8" font-family="Courier New,monospace">MAX 23°C</text>
+          <text x="436" y="98" text-anchor="end" fill="#166534" font-size="8" font-family="Courier New,monospace">MIN 20°C</text>
+          <!-- Grid -->
+          <line x1="44" y1="20" x2="44" y2="150" stroke="#e5e7eb" stroke-width="1"/>
+          <line x1="44" y1="150" x2="430" y2="150" stroke="#e5e7eb" stroke-width="1"/>
+          <line x1="44" y1="64" x2="430" y2="64" stroke="#e5e7eb" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <line x1="44" y1="92" x2="430" y2="92" stroke="#e5e7eb" stroke-width="0.5" stroke-dasharray="3,3"/>
+          <!-- Y labels -->
+          <text x="40" y="25" text-anchor="end" fill="#9CA3AF" font-size="8" font-family="Courier New,monospace">26°</text>
+          <text x="40" y="64" text-anchor="end" fill="#9CA3AF" font-size="8" font-family="Courier New,monospace">23°</text>
+          <text x="40" y="92" text-anchor="end" fill="#9CA3AF" font-size="8" font-family="Courier New,monospace">20°</text>
+          <text x="40" y="150" text-anchor="end" fill="#9CA3AF" font-size="8" font-family="Courier New,monospace">17°</text>
+          <!-- Area fill under line -->
+          <path d="M55,88 L70,82 L85,86 L100,90 L115,84 L130,80 L145,84 L160,78 L175,83 L190,86 L205,88 L220,90 L235,82 L250,86 L265,84 L280,80 L295,83 L310,78 L325,85 L340,22 L355,25 L370,86 L385,88 L400,82 L415,86 L430,84 L430,150 L55,150Z"
+            fill="rgba(27,42,74,0.06)"/>
+          <!-- Line -->
+          <polyline points="55,88 70,82 85,86 100,90 115,84 130,80 145,84 160,78 175,83 190,86 205,88 220,90 235,82 250,86 265,84 280,80 295,83 310,78 325,85 340,22 355,25 370,86 385,88 400,82 415,86 430,84"
+            fill="none" stroke="#1B2A4A" stroke-width="2" stroke-linejoin="round"/>
+          <!-- Out-of-band -->
+          <circle cx="340" cy="22" r="6" fill="#BF1E2E" stroke="white" stroke-width="2"/>
+          <circle cx="355" cy="25" r="6" fill="#BF1E2E" stroke="white" stroke-width="2"/>
+          <text x="347" y="14" fill="#BF1E2E" font-size="8" font-family="Courier New,monospace" text-anchor="middle" font-weight="bold">EXCEEDED</text>
+          <!-- Normal dots -->
+          <circle cx="55" cy="88" r="3" fill="#1B2A4A"/>
+          <circle cx="160" cy="78" r="3" fill="#1B2A4A"/>
+          <circle cx="280" cy="80" r="3" fill="#1B2A4A"/>
+          <circle cx="430" cy="84" r="3" fill="#1B2A4A"/>
+        </svg>
+        <div style="font-size:9px;color:var(--text-muted);text-align:center;">Temperature drifted above SOP max (23°C) in 2 loads — Hotspots tab ranks worst offenders</div>
+      </div>
+      <!-- Hotspot panel -->
+      <div style="width:230px;background:white;padding:12px;display:flex;flex-direction:column;gap:10px;overflow:hidden;">
+        <div style="font-size:9px;letter-spacing:2px;color:var(--navy);font-family:'Courier New',monospace;font-weight:bold;">TOP FAILURE HOTSPOTS</div>
+        <div style="display:flex;flex-direction:column;gap:8px;flex:1;">
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px;"><span style="color:var(--text);">Zinc Bath Temp</span><span style="color:var(--red);font-weight:bold;">8 fails</span></div>
+            <div class="hbar-wrap"><div class="hbar" style="width:80%;background:var(--red);"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px;"><span style="color:var(--text);">Passivation Dip Time</span><span style="color:var(--red);font-weight:bold;">5 fails</span></div>
+            <div class="hbar-wrap"><div class="hbar" style="width:50%;background:var(--red);"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px;"><span style="color:var(--text);">Alkali Degrease Temp</span><span style="color:#d97706;font-weight:bold;">3 fails</span></div>
+            <div class="hbar-wrap"><div class="hbar" style="width:30%;background:#d97706;"></div></div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px;"><span style="color:var(--text);">Anodic Clean Temp</span><span style="color:#d97706;font-weight:bold;">2 fails</span></div>
+            <div class="hbar-wrap"><div class="hbar" style="width:20%;background:#d97706;"></div></div>
+          </div>
+        </div>
+        <div style="background:var(--gray);padding:8px;font-size:9px;color:var(--text-muted);border-left:3px solid var(--navy);">
+          <strong style="color:var(--navy);display:block;margin-bottom:3px;">CAPABILITY</strong>
+          Zinc Bath running 0.8σ from upper limit — intervene before next lot.
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sub">Five lenses on one dataset: Trends show drift over time, Hotspots rank problem stations, Compare puts any two loads side-by-side, and Capability flags stations that pass but run close to the edge.</div>
+</div>
+
+<!-- FRAME 6: Vendor Submit (110–130s) -->
+<div class="fr" id="f6">
+  <div class="sh">
+    <div class="logo">RE</div><div class="sh-div"></div>
+    <div class="sh-title">Feature 4 — Vendor Batch Control</div>
+    <div class="sh-scene">SCENE 4 / 5</div>
+  </div>
+  <div class="ca" style="display:flex;background:var(--gray);gap:0;overflow:hidden;">
+    <div style="flex:1;background:white;padding:14px;display:flex;flex-direction:column;gap:10px;overflow:hidden;">
+      <div class="stitle"><h2>Submit to Royal Enfield — Vendor Controls This</h2></div>
+      <div style="font-size:10.5px;color:var(--text-muted);line-height:1.5;">Review scored loads. Select the batches you stand behind. Push your data — on your terms.</div>
+      <table class="dt" style="width:100%;">
+        <thead><tr>
+          <th style="width:40px;">SELECT</th><th>Load No.</th><th>Part</th><th style="text-align:center;">Pass Rate</th><th style="text-align:center;">Status</th>
+        </tr></thead>
+        <tbody>
+          <tr class="pass">
+            <td style="text-align:center;"><input type="checkbox" checked style="accent-color:var(--navy);width:14px;height:14px;" readonly/></td>
+            <td><strong>LD-2025-0087</strong><br/><span style="font-size:9px;color:var(--text-muted);">Aug 18, 09:14</span></td>
+            <td>Engine Mount Bracket</td>
+            <td style="text-align:center;font-weight:bold;color:var(--pass-text);font-variant-numeric:tabular-nums;">100%</td>
+            <td style="text-align:center;"><span class="badge p">PASS</span></td>
+          </tr>
+          <tr class="pass">
+            <td style="text-align:center;"><input type="checkbox" checked style="accent-color:var(--navy);width:14px;height:14px;" readonly/></td>
+            <td><strong>LD-2025-0086</strong><br/><span style="font-size:9px;color:var(--text-muted);">Aug 18, 07:02</span></td>
+            <td>Footrest Assembly</td>
+            <td style="text-align:center;font-weight:bold;color:var(--pass-text);font-variant-numeric:tabular-nums;">96%</td>
+            <td style="text-align:center;"><span class="badge p">PASS</span></td>
+          </tr>
+          <tr style="opacity:0.5;">
+            <td style="text-align:center;"><input type="checkbox" disabled style="width:14px;height:14px;" readonly/></td>
+            <td><strong>LD-2025-0085</strong><br/><span style="font-size:9px;color:var(--text-muted);">Aug 17, 16:48</span></td>
+            <td>Chain Sprocket Cover</td>
+            <td style="text-align:center;font-weight:bold;color:var(--fail-text);font-variant-numeric:tabular-nums;">83%</td>
+            <td style="text-align:center;"><span class="badge f">BLOCKED</span></td>
+          </tr>
+          <tr class="pass">
+            <td style="text-align:center;"><input type="checkbox" checked style="accent-color:var(--navy);width:14px;height:14px;" readonly/></td>
+            <td><strong>LD-2025-0084</strong><br/><span style="font-size:9px;color:var(--text-muted);">Aug 17, 14:22</span></td>
+            <td>Frame Bracket Set</td>
+            <td style="text-align:center;font-weight:bold;color:var(--pass-text);font-variant-numeric:tabular-nums;">100%</td>
+            <td style="text-align:center;"><span class="badge p">PASS</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="background:var(--red);color:white;padding:9px 18px;font-size:9px;letter-spacing:2px;font-family:'Courier New',monospace;display:inline-block;cursor:default;align-self:flex-start;margin-top:auto;">SUBMIT 3 LOADS TO ROYAL ENFIELD →</div>
+    </div>
+    <div style="width:230px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;padding:14px;overflow:hidden;">
+      <div style="background:var(--navy);color:white;padding:14px;flex-shrink:0;">
+        <div style="font-size:8px;letter-spacing:2px;font-family:'Courier New',monospace;margin-bottom:9px;color:rgba(255,255,255,0.5);">VENDOR BENEFITS</div>
+        <div style="font-size:10.5px;color:rgba(255,255,255,0.85);line-height:1.7;">
+          ✓ Push only data you stand behind<br/>
+          ✓ Timestamped &amp; locked on submit<br/>
+          ✓ No surprises in any audit<br/>
+          ✓ No new legal obligations
+        </div>
+      </div>
+      <div style="background:white;padding:12px;border-left:3px solid #16a34a;flex:1;border:1px solid var(--border);border-left:3px solid #16a34a;">
+        <div style="font-size:8px;letter-spacing:2px;font-family:'Courier New',monospace;color:var(--pass-text);margin-bottom:7px;">TRUST SIGNAL</div>
+        <div style="font-size:10.5px;color:var(--text);line-height:1.6;">Submitted loads are verified against your own approved SOP — giving Royal Enfield full transparency without changing any existing oversight or legal relationship.</div>
+      </div>
+    </div>
+  </div>
+  <div class="sub">You stay in control. Review each scored batch. Submit only the loads you're confident in. Your data becomes your quality signature — not a liability.</div>
+</div>
+
+<!-- FRAME 7: Warranty & ROI (130–155s) -->
+<div class="fr" id="f7">
+  <div class="sh">
+    <div class="logo">RE</div><div class="sh-div"></div>
+    <div class="sh-title">The Business Case — Warranty Protection &amp; Cost Savings</div>
+    <div class="sh-scene">SCENE 4 / 5</div>
+  </div>
+  <div class="ca" style="display:flex;background:white;gap:0;overflow:hidden;">
+    <div style="flex:1;display:flex;flex-direction:column;padding:14px;gap:12px;overflow:hidden;">
+      <div class="stitle"><h2>Before vs After</h2></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;flex:1;min-height:0;">
+        <div style="background:var(--fail-bg);padding:14px;border:1px solid #fca5a5;overflow:hidden;">
+          <div style="font-size:9px;letter-spacing:2px;color:var(--fail-text);font-family:'Courier New',monospace;font-weight:bold;margin-bottom:10px;">BEFORE</div>
+          <div style="font-size:10.5px;color:var(--text);line-height:1.85;">
+            ❌ Warranty claim arrives at Royal Enfield<br/>
+            ❌ Days tracing which load, which station<br/>
+            ❌ No data → vendor blamed by default<br/>
+            ❌ Claim cost: ₹40,000 – ₹2 lakh/incident<br/>
+            ❌ Relationship damage, vendor score drops
+          </div>
+        </div>
+        <div style="background:var(--pass-bg);padding:14px;border:1px solid #86efac;overflow:hidden;">
+          <div style="font-size:9px;letter-spacing:2px;color:var(--pass-text);font-family:'Courier New',monospace;font-weight:bold;margin-bottom:10px;">AFTER</div>
+          <div style="font-size:10.5px;color:var(--text);line-height:1.85;">
+            ✓ Load ID → exact readings in 30 seconds<br/>
+            ✓ Every parameter timestamped and locked<br/>
+            ✓ SOP compliance proven instantly<br/>
+            ✓ Warranty disputes resolved with data<br/>
+            ✓ RE trust score and partner grade improve
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="width:256px;flex-shrink:0;display:flex;flex-direction:column;padding:14px;gap:10px;border-left:1px solid var(--border);background:var(--gray);">
+      <div class="stitle"><h2>ROI</h2></div>
+      <div style="background:white;padding:12px;display:flex;flex-direction:column;gap:0;border:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text-muted);">Warranty saves / year</div>
+          <div style="font-size:18px;font-weight:bold;color:var(--pass-text);font-family:'Courier New',monospace;font-variant-numeric:tabular-nums;">₹8–25 L</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text-muted);">Rework reduction</div>
+          <div style="font-size:18px;font-weight:bold;color:var(--pass-text);font-family:'Courier New',monospace;">−34%</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);">
+          <div style="font-size:10px;color:var(--text-muted);">Scrap reduction</div>
+          <div style="font-size:18px;font-weight:bold;color:var(--navy);font-family:'Courier New',monospace;">−28%</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;">
+          <div style="font-size:10px;color:var(--text-muted);">RE partner grade</div>
+          <div style="font-size:18px;font-weight:bold;color:var(--red);font-family:'Courier New',monospace;">▲ A+</div>
+        </div>
+      </div>
+      <div style="background:var(--navy);color:white;padding:11px;font-size:9.5px;line-height:1.6;">
+        <strong>No new legal obligations.</strong> The vendor already had an approved SOP. This makes compliance <em>visible</em> — increasing trust at Royal Enfield without adding regulatory burden.
+      </div>
+    </div>
+  </div>
+  <div class="sub">Data-backed batches cut warranty disputes fast. Every submitted load carries a timestamp and SOP proof — your warranty shield. Full control remains with the vendor at every step.</div>
+</div>
+
+<!-- FRAME 8: Closing (155–170s) -->
+<div class="fr" id="f8">
+  <div class="sh">
+    <div class="logo">RE</div><div class="sh-div"></div>
+    <div class="sh-title">Quality, Sustainability &amp; Precision Manufacturing</div>
+    <div class="sh-scene">SCENE 5 / 5</div>
+  </div>
+  <div class="ca" style="display:flex;background:white;overflow:hidden;">
+    <!-- Left: Carbon + tagline -->
+    <div style="flex:1;display:flex;flex-direction:column;padding:16px;gap:12px;justify-content:space-between;">
+      <div>
+        <div class="stitle"><h2>Scrap Reduction &amp; Carbon Impact</h2></div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--text-muted);margin-bottom:4px;"><span>Scrap parts / month — Before</span><span style="color:var(--red);font-weight:bold;">240 kg</span></div>
+            <div style="height:20px;background:var(--fail-bg);border-radius:2px;overflow:hidden;">
+              <div style="height:100%;width:80%;background:var(--red);border-radius:2px;display:flex;align-items:center;padding-left:8px;">
+                <span style="color:white;font-size:8px;font-family:'Courier New',monospace;font-weight:bold;white-space:nowrap;">240 kg → CO₂ + chemical waste</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:9.5px;color:var(--text-muted);margin-bottom:4px;"><span>Scrap parts / month — After</span><span style="color:var(--pass-text);font-weight:bold;">173 kg</span></div>
+            <div style="height:20px;background:var(--pass-bg);border-radius:2px;overflow:hidden;">
+              <div style="height:100%;width:58%;background:#16a34a;border-radius:2px;display:flex;align-items:center;padding-left:8px;">
+                <span style="color:white;font-size:8px;font-family:'Courier New',monospace;font-weight:bold;white-space:nowrap;">173 kg — 28% reduction</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="background:var(--gray);padding:9px 11px;font-size:9.5px;color:var(--text-muted);border-left:3px solid #16a34a;margin-top:10px;line-height:1.55;">
+          Every scrapped plated part carries the carbon cost of chemicals, energy, and water treatment. Fewer scraps = measurable footprint reduction, aligned with Royal Enfield's sustainability commitments.
+        </div>
+      </div>
+      <!-- Final tagline -->
+      <div style="text-align:center;padding:10px 0;">
+        <div style="font-size:9px;letter-spacing:4px;color:var(--text-muted);font-family:'Courier New',monospace;text-transform:uppercase;margin-bottom:8px;">Royal Enfield Vendor Quality</div>
+        <div style="font-size:22px;font-weight:bold;color:var(--navy);font-family:'Courier New',monospace;letter-spacing:2px;line-height:1.25;text-wrap:balance;">PRECISION MANUFACTURING,<br/>PROVEN BY DATA.</div>
+        <div style="width:50px;height:3px;background:var(--red);margin:12px auto;"></div>
+        <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px;">SOP-Driven · Real-Time Scoring · Vendor-Controlled · RE-Trusted</div>
+      </div>
+    </div>
+    <!-- Right: RE Motorcycle -->
+    <div style="width:380px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:14px;background:#F8F8FA;border-left:1px solid var(--border);">
+      <svg viewBox="0 0 360 250" width="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="tankgrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#D42235"/>
+            <stop offset="100%" stop-color="#9A1520"/>
+          </linearGradient>
+          <linearGradient id="wheelgrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#444"/>
+            <stop offset="100%" stop-color="#222"/>
+          </linearGradient>
+        </defs>
+        <!-- REAR WHEEL -->
+        <circle cx="86" cy="182" r="50" fill="none" stroke="#1B2A4A" stroke-width="7"/>
+        <circle cx="86" cy="182" r="40" fill="none" stroke="#555" stroke-width="2"/>
+        <circle cx="86" cy="182" r="14" fill="url(#wheelgrad)"/>
+        <!-- Rear spokes -->
+        <line x1="86" y1="132" x2="86" y2="168" stroke="#888" stroke-width="1.5"/>
+        <line x1="86" y1="196" x2="86" y2="232" stroke="#888" stroke-width="1.5"/>
+        <line x1="36" y1="182" x2="72" y2="182" stroke="#888" stroke-width="1.5"/>
+        <line x1="100" y1="182" x2="136" y2="182" stroke="#888" stroke-width="1.5"/>
+        <line x1="51" y1="147" x2="75" y2="171" stroke="#888" stroke-width="1.5"/>
+        <line x1="97" y1="193" x2="121" y2="217" stroke="#888" stroke-width="1.5"/>
+        <line x1="121" y1="147" x2="97" y2="171" stroke="#888" stroke-width="1.5"/>
+        <line x1="75" y1="193" x2="51" y2="217" stroke="#888" stroke-width="1.5"/>
+        <!-- FRONT WHEEL -->
+        <circle cx="280" cy="182" r="46" fill="none" stroke="#1B2A4A" stroke-width="7"/>
+        <circle cx="280" cy="182" r="36" fill="none" stroke="#555" stroke-width="2"/>
+        <circle cx="280" cy="182" r="12" fill="url(#wheelgrad)"/>
+        <!-- Front spokes -->
+        <line x1="280" y1="136" x2="280" y2="170" stroke="#888" stroke-width="1.5"/>
+        <line x1="280" y1="194" x2="280" y2="228" stroke="#888" stroke-width="1.5"/>
+        <line x1="234" y1="182" x2="268" y2="182" stroke="#888" stroke-width="1.5"/>
+        <line x1="292" y1="182" x2="326" y2="182" stroke="#888" stroke-width="1.5"/>
+        <line x1="247" y1="149" x2="271" y2="173" stroke="#888" stroke-width="1.5"/>
+        <line x1="289" y1="191" x2="313" y2="215" stroke="#888" stroke-width="1.5"/>
+        <line x1="313" y1="149" x2="289" y2="173" stroke="#888" stroke-width="1.5"/>
+        <line x1="271" y1="191" x2="247" y2="215" stroke="#888" stroke-width="1.5"/>
+        <!-- MAIN FRAME -->
+        <path d="M86 180 L126 145 L180 104 L228 98 L263 136 L280 182" fill="none" stroke="#1B2A4A" stroke-width="6" stroke-linejoin="round"/>
+        <!-- Seat tube -->
+        <line x1="180" y1="104" x2="164" y2="162" stroke="#1B2A4A" stroke-width="5"/>
+        <!-- Chain stay -->
+        <line x1="86" y1="162" x2="164" y2="162" stroke="#1B2A4A" stroke-width="4.5"/>
+        <!-- Sub frame -->
+        <path d="M164 162 L190 138 L210 110" fill="none" stroke="#8A9BB0" stroke-width="2.5"/>
+        <!-- ENGINE BLOCK -->
+        <rect x="130" y="147" width="72" height="46" rx="4" fill="#2A2A2A" stroke="#1B2A4A" stroke-width="2"/>
+        <rect x="146" y="157" width="22" height="22" rx="3" fill="#444"/>
+        <rect x="150" y="161" width="14" height="14" rx="2" fill="#555"/>
+        <text x="186" y="168" text-anchor="middle" fill="#888" font-size="7" font-family="Courier New,monospace">350 cc</text>
+        <text x="186" y="178" text-anchor="middle" fill="#666" font-size="6" font-family="Courier New,monospace">SINGLE</text>
+        <!-- FUEL TANK — red teardrop -->
+        <path d="M158 96 Q182 74 222 82 Q248 88 258 104 Q254 124 226 130 Q190 136 162 122 Q146 110 158 96Z" fill="url(#tankgrad)" stroke="#8B1520" stroke-width="1.5"/>
+        <!-- RE badge -->
+        <ellipse cx="202" cy="107" rx="24" ry="13" fill="#1B2A4A"/>
+        <ellipse cx="202" cy="107" rx="21" ry="10" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+        <text x="202" y="111" text-anchor="middle" fill="white" font-size="9" font-family="Courier New,monospace" font-weight="bold" letter-spacing="1">RE</text>
+        <!-- SEAT -->
+        <path d="M148 122 Q172 110 218 112 Q236 114 248 122 Q238 134 216 136 Q180 141 155 136 Z" fill="#1A1A1A" stroke="#333" stroke-width="1.5"/>
+        <!-- EXHAUST PIPE -->
+        <path d="M134 183 Q114 198 90 202 Q78 203 74 196" fill="none" stroke="#777" stroke-width="6" stroke-linecap="round"/>
+        <path d="M132 181 Q118 194 94 197" fill="none" stroke="#AAA" stroke-width="2.5" stroke-linecap="round"/>
+        <!-- FRONT FORK -->
+        <line x1="256" y1="136" x2="272" y2="182" stroke="#666" stroke-width="6" stroke-linecap="round"/>
+        <line x1="262" y1="136" x2="278" y2="182" stroke="#555" stroke-width="4" stroke-linecap="round"/>
+        <!-- HANDLEBAR -->
+        <path d="M248 100 Q262 94 272 97 Q278 100 276 106" fill="none" stroke="#555" stroke-width="5" stroke-linecap="round"/>
+        <!-- Mirror left -->
+        <line x1="250" y1="100" x2="242" y2="90" stroke="#888" stroke-width="2"/>
+        <ellipse cx="239" cy="88" rx="6" ry="3.5" fill="#C8D0D8" stroke="#888" stroke-width="1"/>
+        <!-- HEADLAMP -->
+        <circle cx="290" cy="115" r="22" fill="#F0F0F0" stroke="#888" stroke-width="3"/>
+        <circle cx="290" cy="115" r="16" fill="#FFFFF0" opacity="0.9"/>
+        <circle cx="290" cy="115" r="9" fill="white"/>
+        <line x1="268" y1="115" x2="262" y2="115" stroke="#888" stroke-width="2"/>
+        <line x1="262" y1="104" x2="262" y2="126" stroke="#777" stroke-width="3.5" stroke-linecap="round"/>
+        <!-- NUMBERPLATE -->
+        <rect x="58" y="196" width="54" height="22" rx="2" fill="white" stroke="#888" stroke-width="1.5"/>
+        <text x="85" y="211" text-anchor="middle" fill="#1C1C1C" font-size="8.5" font-weight="bold" font-family="Courier New,monospace">KA 01 RE</text>
+        <!-- Brand text -->
+        <text x="183" y="228" text-anchor="middle" fill="#1B2A4A" font-size="12" font-family="Courier New,monospace" font-weight="bold" letter-spacing="3">ROYAL ENFIELD</text>
+        <text x="183" y="242" text-anchor="middle" fill="#BF1E2E" font-size="8" font-family="Courier New,monospace" letter-spacing="4">CLASSIC 350</text>
+      </svg>
+    </div>
+  </div>
+  <div class="sub">Less scrap. Lower carbon. More trust at Royal Enfield. Precision manufacturing, proven by data.</div>
+</div>
+
+<!-- Progress & controls -->
+<div id="ptrack"><div id="pfill"></div></div>
+<div id="controls">
+  <button id="play-btn" onclick="togglePlay()">PAUSE</button>
+  <button class="sb on" onclick="jump(0)" id="b0">1A — Line</button>
+  <button class="sb" onclick="jump(1)" id="b1">1B — Problem</button>
+  <button class="sb" onclick="jump(2)" id="b2">2 — Dashboard</button>
+  <button class="sb" onclick="jump(3)" id="b3">3A — SOP</button>
+  <button class="sb" onclick="jump(4)" id="b4">3B — Scoring</button>
+  <button class="sb" onclick="jump(5)" id="b5">3C — Analytics</button>
+  <button class="sb" onclick="jump(6)" id="b6">4A — Submit</button>
+  <button class="sb" onclick="jump(7)" id="b7">4B — ROI</button>
+  <button class="sb" onclick="jump(8)" id="b8">5 — Closing</button>
+  <div id="tdisp">0:00 / 2:50</div>
+</div>
+</div>
+</div>
+
+<script>
+const IDS = ['f0','f1','f2','f3','f4','f5','f6','f7','f8'];
+const BTN = ['b0','b1','b2','b3','b4','b5','b6','b7','b8'];
+// Start time of each frame in seconds
+const T = [0, 14, 28, 50, 70, 90, 110, 130, 155, 170];
+const TOTAL = 170;
+
+let cur = 0, elapsed = 0, playing = true, lastTs = null, raf = null;
+
+function showFrame(i) {
+  IDS.forEach((id,j) => {
+    const el = document.getElementById(id);
+    el.classList.toggle('active', j === i);
+  });
+  BTN.forEach((id,j) => {
+    document.getElementById(id).classList.toggle('on', j === i);
+  });
+  if (i === 2 && cur !== 2) {
+    setTimeout(animRows, 400);
+  }
+  cur = i;
+}
+
+function animRows() {
+  document.querySelectorAll('#dtbody .ra').forEach(r => {
+    const d = parseInt(r.dataset.d) || 0;
+    setTimeout(() => r.classList.add('in'), d);
+  });
+}
+
+function frameFor(s) {
+  let fi = 0;
+  for (let i = 0; i < T.length - 1; i++) {
+    if (s >= T[i]) fi = i;
+  }
+  return fi;
+}
+
+function updateUI() {
+  const mins = Math.floor(elapsed / 60);
+  const secs = Math.floor(elapsed % 60);
+  document.getElementById('tdisp').textContent =
+    mins + ':' + String(secs).padStart(2,'0') + ' / 2:50';
+  document.getElementById('pfill').style.width =
+    Math.min(100, (elapsed / TOTAL) * 100) + '%';
+
+  const fi = frameFor(elapsed);
+  if (fi !== cur) showFrame(fi);
+}
+
+function tick(ts) {
+  if (lastTs != null && playing) {
+    elapsed += (ts - lastTs) / 1000;
+    if (elapsed >= TOTAL) {
+      elapsed = TOTAL;
+      playing = false;
+      document.getElementById('play-btn').textContent = 'REPLAY';
+    }
+  }
+  lastTs = ts;
+  updateUI();
+  if (playing) raf = requestAnimationFrame(tick);
+}
+
+function togglePlay() {
+  if (elapsed >= TOTAL) {
+    elapsed = 0; cur = -1;
+    showFrame(0);
+    playing = true;
+    document.getElementById('play-btn').textContent = 'PAUSE';
+    lastTs = null;
+    raf = requestAnimationFrame(tick);
+    return;
+  }
+  playing = !playing;
+  document.getElementById('play-btn').textContent = playing ? 'PAUSE' : 'PLAY';
+  if (playing) {
+    lastTs = null;
+    raf = requestAnimationFrame(tick);
+  }
+}
+
+function jump(i) {
+  elapsed = T[i];
+  showFrame(i);
+  updateUI();
+  if (!playing) { lastTs = null; }
+}
+
+// Kick off
+raf = requestAnimationFrame(tick);
+</script>
