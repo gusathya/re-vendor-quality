@@ -197,6 +197,7 @@ export interface VendorLoad {
   uploadedAt: string;
   pushStatus: string;
   pushedAt: string | null;
+  pushNote: string | null;
   reviewedAt: string | null;
   reviewNote: string | null;
   passes: number;
@@ -214,6 +215,7 @@ export function getVendorLoads(db: Database.Database, vendorId: string): VendorL
          lr.uploaded_at  AS uploadedAt,
          lr.push_status  AS pushStatus,
          lr.pushed_at    AS pushedAt,
+         lr.push_note    AS pushNote,
          lr.reviewed_at  AS reviewedAt,
          lr.review_note  AS reviewNote,
          SUM(CASE WHEN r.score = 'pass' THEN 1 ELSE 0 END)        AS passes,
@@ -260,6 +262,7 @@ export function getPushedLoads(db: Database.Database): PushedLoad[] {
          (SELECT email FROM users WHERE vendor_id = v.id AND role = 'vendor' LIMIT 1) AS vendorEmail,
          lr.push_status  AS pushStatus,
          lr.pushed_at    AS pushedAt,
+         lr.push_note    AS pushNote,
          lr.reviewed_at  AS reviewedAt,
          lr.review_note  AS reviewNote,
          SUM(CASE WHEN r.score = 'pass' THEN 1 ELSE 0 END)        AS passes,

@@ -53,6 +53,9 @@ export function createDb(filePath: string): Database.Database {
   // Customer-editable SOP row ordering.
   try { db.exec('ALTER TABLE sop_parameters ADD COLUMN display_order INTEGER NOT NULL DEFAULT 0'); } catch {}
 
+  // Vendor submission note (mandatory comment when submitting a batch to RE).
+  try { db.exec('ALTER TABLE load_reports ADD COLUMN push_note TEXT'); } catch {}
+
   return db;
 }
 

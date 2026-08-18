@@ -7,9 +7,8 @@ import { ThemeToggle } from './ThemeToggle';
 
 const VENDOR_LINKS = [
   { href: '/', label: 'Dashboard' },
-  { href: '/loads', label: 'My Loads' },
+  { href: '/loads', label: 'My Batches' },
   { href: '/sops', label: 'SOPs' },
-  { href: '/loads/new', label: 'Upload Load' },
   { href: '/inspections', label: 'Inspections' },
   { href: '/settings', label: 'Settings' },
 ];
@@ -18,7 +17,7 @@ const ADMIN_LINKS = [
   { href: '/admin', label: 'Admin Dashboard' },
   { href: '/customer', label: 'RE Portal' },
   { href: '/sops', label: 'SOPs' },
-  { href: '/loads/new', label: 'Upload Load' },
+  { href: '/loads/new', label: 'Upload Batch' },
   { href: '/settings', label: 'Settings' },
 ];
 

@@ -26,7 +26,7 @@ export default async function NewLoadPage() {
     <main className="section">
       <h1>
         <span className="accent-bar" />
-        Upload Load Report
+        Upload Batch
       </h1>
       <form action={uploadLoadReport}>
         <label>

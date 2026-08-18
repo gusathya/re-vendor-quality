@@ -9,7 +9,9 @@ export async function pushLoadReport(formData: FormData): Promise<void> {
   if (!session?.user || session.user.role !== 'vendor') return;
 
   const loadId = formData.get('loadId');
+  const pushNote = formData.get('pushNote');
   if (typeof loadId !== 'string' || !loadId) return;
+  if (typeof pushNote !== 'string' || !pushNote.trim()) return;
 
   const db = getDb();
   const load = db
@@ -21,8 +23,8 @@ export async function pushLoadReport(formData: FormData): Promise<void> {
   if (load.push_status !== 'draft' && load.push_status !== 'rejected') return;
 
   db.prepare(
-    "UPDATE load_reports SET push_status = 'pending', pushed_at = datetime('now') WHERE id = ?",
-  ).run(loadId);
+    "UPDATE load_reports SET push_status = 'pending', pushed_at = datetime('now'), push_note = ? WHERE id = ?",
+  ).run(pushNote.trim(), loadId);
 
   revalidatePath('/loads');
   revalidatePath('/customer');

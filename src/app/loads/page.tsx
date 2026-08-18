@@ -43,11 +43,13 @@ export default async function LoadsPage({
   if (!vendorId) redirect('/admin');
 
   const resolvedParams = await searchParams;
+  const submitId = typeof resolvedParams.submit === 'string' ? resolvedParams.submit : null;
   const viewRejectionId = typeof resolvedParams.rejectedLoad === 'string' ? resolvedParams.rejectedLoad : null;
 
   const db = getDb();
   const loads = getVendorLoads(db, vendorId);
   const rejectedLoad = viewRejectionId ? loads.find((l) => l.id === viewRejectionId) : null;
+  const submitLoad = submitId ? loads.find((l) => l.id === submitId) : null;
 
   // Build draft rejection email if viewing a rejected load
   let rejectionEmail: string | null = null;
@@ -66,10 +68,12 @@ export default async function LoadsPage({
     });
   }
 
+  const isResubmit = submitLoad?.pushStatus === 'rejected';
+
   return (
     <main className="section">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <h1 style={{ margin: 0 }}><span className="accent-bar" />My Load Reports</h1>
+        <h1 style={{ margin: 0 }}><span className="accent-bar" />My Batches</h1>
         <Link
           href="/loads/new"
           style={{
@@ -84,9 +88,100 @@ export default async function LoadsPage({
             textDecoration: 'none',
           }}
         >
-          + Upload New Load
+          + Upload New Batch
         </Link>
       </div>
+
+      {/* Submit to RE modal */}
+      {submitLoad && (submitLoad.pushStatus === 'draft' || submitLoad.pushStatus === 'rejected') && (
+        <div style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 100,
+        }}>
+          <div style={{
+            background: 'var(--color-card-bg)',
+            borderRadius: 12,
+            padding: 28,
+            maxWidth: 520,
+            width: '90vw',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.25)',
+          }}>
+            <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--color-text-heading)', marginBottom: 6 }}>
+              {isResubmit ? 'Re-Submit' : 'Submit'} Batch to RE Approval — Load {submitLoad.loadNumber}
+            </div>
+            <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 18 }}>
+              {isResubmit && (
+                <span style={{ color: 'var(--color-warning)', fontWeight: 600 }}>
+                  Previously rejected.{' '}
+                </span>
+              )}
+              This batch will be sent to Royal Enfield for review.
+            </div>
+            <form action={pushLoadReport}>
+              <input type="hidden" name="loadId" value={submitLoad.id} />
+              <label style={{ display: 'block', marginBottom: 16 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, display: 'block', marginBottom: 6 }}>
+                  Submission comments (required)
+                </span>
+                <textarea
+                  name="pushNote"
+                  required
+                  rows={4}
+                  placeholder={isResubmit
+                    ? 'Describe what was corrected since the last rejection...'
+                    : 'Add any comments or notes for the Royal Enfield review team...'}
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '10px 12px',
+                    borderRadius: 6,
+                    border: '1px solid var(--color-card-border)',
+                    background: 'var(--color-bg-page)',
+                    color: 'var(--color-text-body)',
+                    fontSize: 13,
+                    fontFamily: 'inherit',
+                    resize: 'vertical',
+                  }}
+                />
+              </label>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <a
+                  href="/loads"
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: 6,
+                    fontSize: 13,
+                    border: '1px solid var(--color-card-border)',
+                    color: 'var(--color-text-body)',
+                    textDecoration: 'none',
+                    display: 'inline-block',
+                  }}
+                >
+                  Cancel
+                </a>
+                <button
+                  type="submit"
+                  style={{
+                    padding: '8px 20px',
+                    borderRadius: 6,
+                    fontSize: 13,
+                    background: isResubmit ? 'var(--color-warning)' : 'var(--color-navy-primary)',
+                    color: 'white',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    fontWeight: 600,
+                  }}
+                >
+                  {isResubmit ? 'Re-Submit to RE Approval' : 'Submit to RE Approval'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Rejection detail panel */}
       {rejectedLoad && (
@@ -98,7 +193,7 @@ export default async function LoadsPage({
             <strong>Reason:</strong> {rejectedLoad.reviewNote}
           </p>
           <p style={{ margin: '0 0 8px', fontSize: 12, color: '#6b7280' }}>
-            Please correct the issues and re-push the batch for approval.
+            Please correct the issues and re-submit the batch for approval.
           </p>
 
           {rejectionEmail && (
@@ -107,7 +202,7 @@ export default async function LoadsPage({
                 Draft notification email from Royal Enfield:
               </div>
               <pre style={{
-                background: '#f8fafc',
+                background: 'var(--color-bg-page)',
                 border: '1px solid var(--color-card-border)',
                 borderRadius: 6,
                 padding: '12px 14px',
@@ -116,7 +211,7 @@ export default async function LoadsPage({
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
                 margin: 0,
-                color: '#334155',
+                color: 'var(--color-text-body)',
               }}>
                 {rejectionEmail}
               </pre>
@@ -130,7 +225,7 @@ export default async function LoadsPage({
           <table>
             <thead>
               <tr>
-                <th>Load #</th>
+                <th>Batch #</th>
                 <th>Part</th>
                 <th>Uploaded</th>
                 <th style={{ textAlign: 'right' }}>Readings</th>
@@ -142,7 +237,7 @@ export default async function LoadsPage({
             <tbody>
               {loads.map((load) => {
                 const rate = load.total > 0 ? Math.round((load.passes / load.total) * 100) : null;
-                const canPush = load.pushStatus === 'draft' || load.pushStatus === 'rejected';
+                const canSubmit = load.pushStatus === 'draft' || load.pushStatus === 'rejected';
                 const isRejected = load.pushStatus === 'rejected';
 
                 return (
@@ -167,28 +262,27 @@ export default async function LoadsPage({
                     <td><StatusChip status={load.pushStatus} /></td>
                     <td>
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                        {canPush && (
-                          <form action={pushLoadReport} style={{ margin: 0 }}>
-                            <input type="hidden" name="loadId" value={load.id} />
-                            <button
-                              type="submit"
-                              style={{
-                                background: isRejected ? 'var(--color-warning)' : 'var(--color-navy-primary)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: 6,
-                                padding: '4px 12px',
-                                fontSize: 11,
-                                fontFamily: 'Share Tech, monospace',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                                cursor: 'pointer',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {isRejected ? 'Re-Push' : 'Push to RE'}
-                            </button>
-                          </form>
+                        {canSubmit && (
+                          <a
+                            href={`/loads?submit=${load.id}`}
+                            style={{
+                              background: isRejected ? 'var(--color-warning)' : 'var(--color-navy-primary)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: 6,
+                              padding: '4px 12px',
+                              fontSize: 11,
+                              fontFamily: 'Share Tech, monospace',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.05em',
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap',
+                              textDecoration: 'none',
+                              display: 'inline-block',
+                            }}
+                          >
+                            {isRejected ? 'Re-Submit' : 'Submit to RE'}
+                          </a>
                         )}
                         {isRejected && (
                           <Link
@@ -205,7 +299,7 @@ export default async function LoadsPage({
                         )}
                         {load.pushStatus === 'pending' && (
                           <span style={{ fontSize: 11, color: '#9ca3af' }}>
-                            Pushed {load.pushedAt?.slice(0, 10)}
+                            Submitted {load.pushedAt?.slice(0, 10)}
                           </span>
                         )}
                         {load.pushStatus === 'approved' && (
@@ -221,8 +315,8 @@ export default async function LoadsPage({
               {loads.length === 0 && (
                 <tr>
                   <td colSpan={7} style={{ textAlign: 'center', color: '#9ca3af', padding: 32 }}>
-                    No loads uploaded yet.{' '}
-                    <Link href="/loads/new" style={{ color: 'var(--color-navy-primary)' }}>Upload your first load</Link>.
+                    No batches uploaded yet.{' '}
+                    <Link href="/loads/new" style={{ color: 'var(--color-navy-primary)' }}>Upload your first batch</Link>.
                   </td>
                 </tr>
               )}
@@ -232,7 +326,7 @@ export default async function LoadsPage({
       </div>
 
       <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 12 }}>
-        Draft loads are only visible to you and the admin. Push a batch to submit it to Royal Enfield for approval.
+        Draft batches are only visible to you. Submit a batch with comments to send it to Royal Enfield for approval.
       </p>
     </main>
   );
