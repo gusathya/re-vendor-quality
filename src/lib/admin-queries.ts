@@ -242,6 +242,7 @@ export interface PushedLoad {
   vendorEmail: string | null;
   pushStatus: string;
   pushedAt: string | null;
+  pushNote: string | null;
   reviewedAt: string | null;
   reviewNote: string | null;
   passes: number;

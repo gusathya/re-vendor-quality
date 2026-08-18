@@ -311,6 +311,7 @@ export default async function CustomerPage({
                     <th>Load #</th>
                     <th>Part</th>
                     <th>Pushed</th>
+                    <th>Submission Comment</th>
                     <th style={{ textAlign: 'right' }}>Pass Rate</th>
                     <th>Actions</th>
                   </tr>
@@ -326,9 +327,32 @@ export default async function CustomerPage({
                             <div style={{ fontSize: 11, color: '#9ca3af', fontFamily: 'Share Tech, monospace' }}>{load.vendorCode}</div>
                           )}
                         </td>
-                        <td><strong>{load.loadNumber}</strong></td>
+                        <td>
+                          <a
+                            href={`/loads/${load.id}/review`}
+                            style={{ fontWeight: 700, color: 'var(--color-nav-active-text)', textDecoration: 'none' }}
+                          >
+                            {load.loadNumber}
+                          </a>
+                        </td>
                         <td style={{ color: '#6b7280', fontSize: 12 }}>{load.partNumber ?? '—'}</td>
                         <td style={{ color: '#6b7280', fontSize: 12 }}>{load.pushedAt?.slice(0, 16) ?? '—'}</td>
+                        <td style={{ maxWidth: 220 }}>
+                          {load.pushNote ? (
+                            <span style={{
+                              fontSize: 12,
+                              color: 'var(--color-text-body)',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                            }}>
+                              {load.pushNote}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 12, color: '#9ca3af' }}>—</span>
+                          )}
+                        </td>
                         <td style={{ textAlign: 'right' }}>
                           {rate !== null ? (
                             <span style={{
@@ -340,7 +364,25 @@ export default async function CustomerPage({
                           ) : '—'}
                         </td>
                         <td>
-                          <div style={{ display: 'flex', gap: 8 }}>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <a
+                              href={`/loads/${load.id}/review`}
+                              style={{
+                                border: '1px solid var(--color-card-border)',
+                                color: 'var(--color-text-body)',
+                                borderRadius: 6,
+                                padding: '5px 12px',
+                                fontSize: 11,
+                                fontFamily: 'Share Tech, monospace',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                whiteSpace: 'nowrap',
+                                textDecoration: 'none',
+                                display: 'inline-block',
+                              }}
+                            >
+                              Details
+                            </a>
                             <a
                               href={`/customer?approve=${load.id}`}
                               style={{
@@ -408,7 +450,7 @@ export default async function CustomerPage({
                   <th>Reviewed</th>
                   <th style={{ textAlign: 'right' }}>Pass Rate</th>
                   <th>Status</th>
-                  <th>Note</th>
+                  <th>RE Note</th>
                 </tr>
               </thead>
               <tbody>
@@ -422,7 +464,14 @@ export default async function CustomerPage({
                           <div style={{ fontSize: 11, color: '#9ca3af', fontFamily: 'Share Tech, monospace' }}>{load.vendorCode}</div>
                         )}
                       </td>
-                      <td><strong>{load.loadNumber}</strong></td>
+                      <td>
+                        <a
+                          href={`/loads/${load.id}/review`}
+                          style={{ fontWeight: 700, color: 'var(--color-nav-active-text)', textDecoration: 'none' }}
+                        >
+                          {load.loadNumber}
+                        </a>
+                      </td>
                       <td style={{ color: '#6b7280', fontSize: 12 }}>{load.partNumber ?? '—'}</td>
                       <td style={{ color: '#6b7280', fontSize: 12 }}>{load.pushedAt?.slice(0, 10) ?? '—'}</td>
                       <td style={{ color: '#6b7280', fontSize: 12 }}>{load.reviewedAt?.slice(0, 10) ?? '—'}</td>
