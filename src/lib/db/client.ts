@@ -50,6 +50,9 @@ export function createDb(filePath: string): Database.Database {
   try { db.exec('ALTER TABLE load_reports ADD COLUMN reviewed_by TEXT'); } catch {}
   try { db.exec('ALTER TABLE load_reports ADD COLUMN review_note TEXT'); } catch {}
 
+  // Customer-editable SOP row ordering.
+  try { db.exec('ALTER TABLE sop_parameters ADD COLUMN display_order INTEGER NOT NULL DEFAULT 0'); } catch {}
+
   return db;
 }
 

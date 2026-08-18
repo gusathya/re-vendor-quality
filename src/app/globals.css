@@ -1,21 +1,23 @@
 :root {
-  --color-navy-primary: #1B2A4A;
-  --color-navy-deep: #14213D;
-  --color-red-accent: #BF1E2E;
-  --color-white: #FFFFFF;
-  --color-text-body: #374151;
-  --color-text-heading: #111827;
-  --color-bg-light-gray: #F2F2F2;
-  --color-nav-link: #374151;
-  --color-success: #16a34a;
-  --color-success-bg: #dcfce7;
-  --color-danger: #dc2626;
-  --color-danger-bg: #fee2e2;
-  --color-warning: #d97706;
-  --color-warning-bg: #fef3c7;
-  --color-card-bg: #ffffff;
-  --color-card-border: #e5e7eb;
-  --color-bg-page: #f1f5f9;
+  --color-navy-primary:   #1B2A4A;
+  --color-navy-deep:      #14213D;
+  --color-red-accent:     #BF1E2E;
+  --color-white:          #FFFFFF;
+  --color-text-body:      #374151;
+  --color-text-heading:   #111827;
+  --color-bg-light-gray:  #F2F2F2;
+  --color-nav-link:       #374151;
+  --color-success:        #16a34a;
+  --color-success-bg:     #dcfce7;
+  --color-danger:         #dc2626;
+  --color-danger-bg:      #fee2e2;
+  --color-warning:        #d97706;
+  --color-warning-bg:     #fef3c7;
+  --color-card-bg:        #ffffff;
+  --color-card-border:    #e5e7eb;
+  --color-bg-page:        #f1f5f9;
+  --color-table-head-bg:  var(--color-navy-primary);
+  --color-nav-active-bg:  #eff6ff;
   --radius-card: 10px;
   --shadow-card: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04);
 }
@@ -109,7 +111,7 @@ button:hover { opacity: 0.85; }
 .table-wrap { overflow-x: auto; border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
 table { width: 100%; border-collapse: collapse; background: var(--color-card-bg); font-size: 13px; }
 thead th {
-  background: var(--color-navy-primary);
+  background: var(--color-table-head-bg);
   color: white;
   padding: 10px 14px;
   text-align: left;
@@ -185,25 +187,38 @@ label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 4px; c
 
 /* ── Dark mode ── */
 [data-theme="dark"] {
-  --color-text-body:     #d1d5db;
-  --color-text-heading:  #f3f4f6;
-  --color-bg-light-gray: #1f2937;
-  --color-nav-link:      #e5e7eb;
-  --color-success:       #4ade80;
-  --color-success-bg:    #14532d;
-  --color-danger:        #f87171;
-  --color-danger-bg:     #7f1d1d;
-  --color-warning:       #fbbf24;
-  --color-warning-bg:    #78350f;
-  --color-card-bg:       #1e2533;
-  --color-card-border:   #374151;
-  --color-bg-page:       #111827;
-  --color-row-hover:     #1f2937;
-  --color-row-fail:      #3b0f0f;
-  --color-row-warn:      #2d1a00;
-  --shadow-card: 0 1px 4px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04);
+  /* Surfaces — navy-tinted dark, three depth levels */
+  --color-bg-page:        #0d1117;
+  --color-card-bg:        #161b22;
+  --color-card-border:    #30363d;
+  --color-bg-light-gray:  #161b22;
+  --color-nav-active-bg:  rgba(27,42,74,0.55);
+  --color-table-head-bg:  #1c2d47;
+
+  /* Text */
+  --color-text-body:      #c9d1d9;
+  --color-text-heading:   #e6edf3;
+  --color-nav-link:       #c9d1d9;
+
+  /* Status — muted, semi-transparent backgrounds */
+  --color-success:        #3fb950;
+  --color-success-bg:     rgba(63,185,80,0.12);
+  --color-danger:         #f85149;
+  --color-danger-bg:      rgba(248,81,73,0.12);
+  --color-warning:        #e3b341;
+  --color-warning-bg:     rgba(227,179,65,0.12);
+
+  /* Table rows */
+  --color-row-hover:      #1c2128;
+  --color-row-fail:       rgba(248,81,73,0.07);
+  --color-row-warn:       rgba(227,179,65,0.07);
+
+  --shadow-card: 0 1px 6px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
 }
-[data-theme="dark"] .chart-title            { color: #9ca3af; }
-[data-theme="dark"] .badge-unscored         { background: #374151; color: #9ca3af; }
-[data-theme="dark"] .badge-superseded       { background: #374151; color: #9ca3af; }
-[data-theme="dark"] .badge-draft            { background: #1e3a5f; color: #93c5fd; }
+[data-theme="dark"] .chart-title      { color: #8b949e; }
+[data-theme="dark"] .kpi-card-label   { color: #8b949e; }
+[data-theme="dark"] .kpi-card-sub     { color: #6e7681; }
+[data-theme="dark"] .badge-unscored   { background: #21262d; color: #8b949e; }
+[data-theme="dark"] .badge-superseded { background: #21262d; color: #8b949e; }
+[data-theme="dark"] .badge-draft      { background: #1f3a5f; color: #79c0ff; }
+[data-theme="dark"] a                 { color: #79c0ff; }

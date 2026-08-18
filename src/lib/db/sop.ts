@@ -99,9 +99,38 @@ export function getSopParametersByDocument(db: Database.Database, sopDocumentId:
               station_no AS stationNo, process, product_chemical AS productChemical, characteristic,
               min_value AS minValue, max_value AS maxValue, unit, status,
               raw_control_limit AS rawControlLimit, raw_spec_limit AS rawSpecLimit
-       FROM sop_parameters WHERE sop_document_id = ?`,
+       FROM sop_parameters WHERE sop_document_id = ?
+       ORDER BY display_order, sr_no`,
     )
     .all(sopDocumentId) as SopParameter[];
+}
+
+export function insertBlankSopParameter(db: Database.Database, sopDocumentId: string): SopParameter {
+  const id = randomUUID();
+  const maxRow = db
+    .prepare('SELECT COALESCE(MAX(display_order), -1) AS m FROM sop_parameters WHERE sop_document_id = ?')
+    .get(sopDocumentId) as { m: number };
+  db.prepare(
+    `INSERT INTO sop_parameters
+       (id, sop_document_id, station_group_key, sr_no, process, status, display_order)
+     VALUES (?, ?, '', 'NEW', '', 'parsed', ?)`,
+  ).run(id, sopDocumentId, maxRow.m + 1);
+  return {
+    id, sopDocumentId,
+    stationGroupKey: '', srNo: 'NEW', stationNo: null,
+    process: '', productChemical: null, characteristic: null,
+    minValue: null, maxValue: null, unit: null,
+    status: 'parsed', rawControlLimit: null, rawSpecLimit: null,
+  };
+}
+
+export function deleteSopParameterById(db: Database.Database, parameterId: string): void {
+  db.prepare('DELETE FROM sop_parameters WHERE id = ?').run(parameterId);
+}
+
+export function setSopParameterOrder(db: Database.Database, orderedIds: string[]): void {
+  const update = db.prepare('UPDATE sop_parameters SET display_order = ? WHERE id = ?');
+  db.transaction(() => { orderedIds.forEach((id, i) => update.run(i, id)); })();
 }
 
 export function updateSopParameterLimits(

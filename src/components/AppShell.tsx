@@ -94,7 +94,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   fontSize: 13,
                   fontWeight: isActive ? 700 : 400,
                   color: isActive ? 'var(--color-navy-primary)' : 'var(--color-nav-link)',
-                  background: isActive ? '#eff6ff' : 'transparent',
+                  background: isActive ? 'var(--color-nav-active-bg)' : 'transparent',
                   textDecoration: 'none',
                   borderBottom: isActive ? '2px solid var(--color-navy-primary)' : '2px solid transparent',
                   transition: 'all 0.12s',

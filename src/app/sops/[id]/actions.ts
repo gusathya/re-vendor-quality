@@ -3,7 +3,9 @@
 import { auth } from '@/lib/auth';
 import { getDb } from '@/lib/db/client';
 import {
-  activateSopDocument, getSopParametersByDocument, updateSopParameterLimits, type SopParameter,
+  activateSopDocument, getSopParametersByDocument, updateSopParameterLimits,
+  insertBlankSopParameter, deleteSopParameterById, setSopParameterOrder,
+  type SopParameter,
 } from '@/lib/db/sop';
 import { upsertStationAlias } from '@/lib/db/station-aliases';
 import { revalidatePath } from 'next/cache';
@@ -49,4 +51,19 @@ export async function activateSop(sopDocumentId: string, vendorId: string) {
 
 export async function getDraftParameters(sopDocumentId: string): Promise<SopParameter[]> {
   return getSopParametersByDocument(getDb(), sopDocumentId);
+}
+
+export async function addSopParameter(sopDocumentId: string): Promise<SopParameter> {
+  await requireEditAccess();
+  return insertBlankSopParameter(getDb(), sopDocumentId);
+}
+
+export async function removeSopParameter(parameterId: string): Promise<void> {
+  await requireEditAccess();
+  deleteSopParameterById(getDb(), parameterId);
+}
+
+export async function reorderSopParameters(orderedIds: string[]): Promise<void> {
+  await requireEditAccess();
+  setSopParameterOrder(getDb(), orderedIds);
 }

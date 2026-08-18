@@ -73,6 +73,7 @@ export default async function SopReviewPage({ params }: { params: Promise<{ id: 
         vendorId={doc.vendorId}
         aliasByGroupKey={aliasByGroupKey}
         readOnly={!canEdit}
+        sopDocumentId={canEdit ? id : undefined}
       />
 
       {canEdit && doc.status === 'draft' && (
