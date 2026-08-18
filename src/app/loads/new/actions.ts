@@ -15,50 +15,70 @@ import { redirect } from 'next/navigation';
 
 export async function uploadLoadReport(formData: FormData) {
   const session = await auth();
-  if (!session?.user) throw new Error('Not authenticated');
+  if (!session?.user) redirect('/login');
 
   const file = formData.get('loadFile') as File | null;
-  const vendorName = formData.get('vendorName') as string | null;
-  if (!file || file.size === 0) throw new Error('No file uploaded');
-  if (!vendorName) throw new Error('No vendor selected');
+  const vendorName = (formData.get('vendorName') as string | null)?.trim() ?? null;
+
+  if (!file || file.size === 0) {
+    redirect(`/loads/new?error=${encodeURIComponent('No file selected — please choose an Excel file.')}`);
+  }
+  if (!vendorName) {
+    redirect(`/loads/new?error=${encodeURIComponent('No vendor selected.')}`);
+  }
+
+  let parsed;
+  let buffer: Buffer;
+
+  try {
+    buffer = Buffer.from(await file.arrayBuffer());
+    parsed = parseLoadReportWorkbook(buffer);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    redirect(`/loads/new?error=${encodeURIComponent(`Could not parse the file: ${msg}`)}`);
+  }
 
   const db = getDb();
   const vendor = getVendorByName(db, vendorName);
-  if (!vendor) throw new Error(`Unknown vendor: ${vendorName}`);
-
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const parsed = parseLoadReportWorkbook(buffer);
+  if (!vendor) {
+    redirect(`/loads/new?error=${encodeURIComponent(`Vendor not found: "${vendorName}". Try refreshing the page.`)}`);
+  }
 
   if (loadNumberExists(db, vendor.id, parsed.metadata.loadNumber)) {
-    throw new Error(`Load ${parsed.metadata.loadNumber} was already uploaded for ${vendorName}`);
+    redirect(`/loads/new?error=${encodeURIComponent(`Load #${parsed.metadata.loadNumber} has already been uploaded for ${vendorName}.`)}`);
   }
 
   const activeParams = getActiveSopParameters(db, vendor.id);
   if (activeParams.length === 0) {
-    throw new Error(`${vendorName} has no active SOP yet — finish SOP review and activation first`);
+    redirect(`/loads/new?error=${encodeURIComponent(`${vendorName} has no active SOP yet. Activate the SOP first before uploading a batch.`)}`);
   }
 
   const aliases = getStationAliasesForVendor(db, vendor.id);
-
   const uploadsRoot = process.env.UPLOADS_ROOT ?? './Vendors';
   const uploadDir = path.resolve(uploadsRoot, vendorName, 'Uploads');
-  await mkdir(uploadDir, { recursive: true });
-  const filePath = path.join(uploadDir, safeUploadFilename(file.name));
-  await writeFile(filePath, buffer);
 
-  const report = createLoadReport(db, {
-    vendorId: vendor.id,
-    loadNumber: parsed.metadata.loadNumber,
-    filePath,
-    partNumber: parsed.metadata.partNumber,
-    totalWeightKg: parsed.metadata.totalWeightKg,
-    loadInTime: parsed.metadata.loadInTime.toISOString(),
-    loadOutTime: parsed.metadata.loadOutTime.toISOString(),
-    totalTimeSeconds: parsed.metadata.totalTimeSeconds,
-    uploadedBy: session.user.id,
-  });
+  try {
+    await mkdir(uploadDir, { recursive: true });
+    const filePath = path.join(uploadDir, safeUploadFilename(file.name));
+    await writeFile(filePath, buffer!);
 
-  insertLoadReadings(db, report.id, buildLoadReadings(parsed.readings, activeParams, aliases));
+    const report = createLoadReport(db, {
+      vendorId: vendor.id,
+      loadNumber: parsed.metadata.loadNumber,
+      filePath,
+      partNumber: parsed.metadata.partNumber,
+      totalWeightKg: parsed.metadata.totalWeightKg,
+      loadInTime: parsed.metadata.loadInTime.toISOString(),
+      loadOutTime: parsed.metadata.loadOutTime.toISOString(),
+      totalTimeSeconds: parsed.metadata.totalTimeSeconds,
+      uploadedBy: session.user.id,
+    });
 
-  redirect('/');
+    insertLoadReadings(db, report.id, buildLoadReadings(parsed.readings, activeParams, aliases));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    redirect(`/loads/new?error=${encodeURIComponent(`Upload failed: ${msg}`)}`);
+  }
+
+  redirect('/loads');
 }
