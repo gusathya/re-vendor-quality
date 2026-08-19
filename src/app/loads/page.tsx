@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getDb } from '@/lib/db/client';
 import { getVendorLoads } from '@/lib/admin-queries';
 import { draftBatchRejectedEmail } from '@/lib/email-templates';
+import { getResubmissionDiff } from '@/lib/vendor-queries';
 import Link from 'next/link';
 import { pushLoadReport } from './actions';
 
@@ -50,6 +51,7 @@ export default async function LoadsPage({
   const loads = getVendorLoads(db, vendorId);
   const rejectedLoad = viewRejectionId ? loads.find((l) => l.id === viewRejectionId) : null;
   const submitLoad = submitId ? loads.find((l) => l.id === submitId) : null;
+  const resubmitDiff = submitLoad ? getResubmissionDiff(db, submitLoad.id, vendorId) : null;
 
   // Build draft rejection email if viewing a rejected load
   let rejectionEmail: string | null = null;
@@ -119,6 +121,35 @@ export default async function LoadsPage({
               )}
               This batch will be sent to Royal Enfield for review.
             </div>
+
+            {/* Re-submission diff — #5 */}
+            {resubmitDiff && (resubmitDiff.improved > 0 || resubmitDiff.regressed > 0) && (
+              <div style={{
+                background: 'var(--color-bg-page)',
+                border: '1px solid var(--color-card-border)',
+                borderRadius: 8,
+                padding: '10px 14px',
+                marginBottom: 16,
+                fontSize: 12,
+              }}>
+                <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--color-text-heading)' }}>
+                  vs. previous batch (Load {resubmitDiff.previousLoadNumber}):
+                </div>
+                <div style={{ display: 'flex', gap: 16 }}>
+                  {resubmitDiff.improved > 0 && (
+                    <span style={{ color: 'var(--color-success)', fontWeight: 700 }}>
+                      ↑ {resubmitDiff.improved} improved
+                    </span>
+                  )}
+                  {resubmitDiff.regressed > 0 && (
+                    <span style={{ color: 'var(--color-danger)', fontWeight: 700 }}>
+                      ↓ {resubmitDiff.regressed} regressed
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
             <form action={pushLoadReport}>
               <input type="hidden" name="loadId" value={submitLoad.id} />
               <label style={{ display: 'block', marginBottom: 16 }}>
@@ -183,19 +214,26 @@ export default async function LoadsPage({
         </div>
       )}
 
-      {/* Rejection detail panel */}
+      {/* Rejection detail panel — #4 */}
       {rejectedLoad && (
         <div className="card" style={{ marginBottom: 24, borderLeft: '4px solid var(--color-danger)' }}>
           <div style={{ fontWeight: 700, color: 'var(--color-danger)', marginBottom: 8 }}>
             Rejection Notice — Load {rejectedLoad.loadNumber}
           </div>
-          <p style={{ margin: '0 0 12px', fontSize: 13 }}>
-            <strong>Reason:</strong> {rejectedLoad.reviewNote}
+          <p style={{ margin: '0 0 4px', fontSize: 13 }}>
+            <strong>RE Reason:</strong> {rejectedLoad.reviewNote}
           </p>
+          <p style={{ margin: '0 0 12px', fontSize: 12, color: '#6b7280' }}>
+            Rejected on {rejectedLoad.reviewedAt?.slice(0, 10) ?? '—'}
+          </p>
+          {rejectedLoad.pushNote && (
+            <p style={{ margin: '0 0 12px', fontSize: 13 }}>
+              <strong>Your submission note:</strong> {rejectedLoad.pushNote}
+            </p>
+          )}
           <p style={{ margin: '0 0 8px', fontSize: 12, color: '#6b7280' }}>
-            Please correct the issues and re-submit the batch for approval.
+            Please correct the issues and re-submit for approval.
           </p>
-
           {rejectionEmail && (
             <>
               <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 6, color: 'var(--color-text-heading)' }}>
@@ -303,9 +341,17 @@ export default async function LoadsPage({
                           </span>
                         )}
                         {load.pushStatus === 'approved' && (
-                          <span style={{ fontSize: 11, color: 'var(--color-success)' }}>
-                            Approved {load.reviewedAt?.slice(0, 10)}
-                          </span>
+                          <>
+                            <span style={{ fontSize: 11, color: 'var(--color-success)' }}>
+                              Approved {load.reviewedAt?.slice(0, 10)}
+                            </span>
+                            <Link
+                              href={`/loads/${load.id}/certificate`}
+                              style={{ fontSize: 11, color: 'var(--color-nav-active-text)', textDecoration: 'underline', whiteSpace: 'nowrap' }}
+                            >
+                              Certificate
+                            </Link>
+                          </>
                         )}
                       </div>
                     </td>

@@ -11,6 +11,7 @@ import { getStationAliasesForVendor } from '@/lib/db/station-aliases';
 import { parseLoadReportWorkbook } from '@/lib/parsers/load-report-parser';
 import { buildLoadReadings } from '@/lib/load-scoring-pipeline';
 import { safeUploadFilename } from '@/lib/safe-filename';
+import { logBatchEvent } from '@/lib/vendor-queries';
 import { redirect } from 'next/navigation';
 
 export async function uploadLoadReport(formData: FormData) {
@@ -75,6 +76,7 @@ export async function uploadLoadReport(formData: FormData) {
     });
 
     insertLoadReadings(db, report.id, buildLoadReadings(parsed.readings, activeParams, aliases));
+    logBatchEvent(db, report.id, 'uploaded', session.user.email ?? null, null);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     redirect(`/loads/new?error=${encodeURIComponent(`Upload failed: ${msg}`)}`);

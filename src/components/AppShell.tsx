@@ -9,8 +9,7 @@ const VENDOR_LINKS = [
   { href: '/', label: 'Dashboard' },
   { href: '/loads', label: 'My Batches' },
   { href: '/sops', label: 'SOPs' },
-  { href: '/inspections', label: 'Inspections' },
-  { href: '/settings', label: 'Settings' },
+  { href: '/vendor/scorecard', label: 'Monthly Report' },
 ];
 
 const ADMIN_LINKS = [

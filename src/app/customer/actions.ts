@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { getDb } from '@/lib/db/client';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { logBatchEvent } from '@/lib/vendor-queries';
 
 function canReview(role: string) {
   return role === 'customer' || role === 'admin';
@@ -29,6 +30,8 @@ export async function approveLoadReport(formData: FormData): Promise<void> {
     "UPDATE load_reports SET push_status = 'approved', reviewed_at = datetime('now'), reviewed_by = ?, review_note = ? WHERE id = ?",
   ).run(session.user.id, note.trim(), loadId);
 
+  logBatchEvent(db, loadId, 'approved', session.user.email ?? null, note.trim());
+
   revalidatePath('/customer');
   revalidatePath('/admin');
 }
@@ -52,6 +55,8 @@ export async function rejectLoadReport(formData: FormData): Promise<void> {
   db.prepare(
     "UPDATE load_reports SET push_status = 'rejected', reviewed_at = datetime('now'), reviewed_by = ?, review_note = ? WHERE id = ?",
   ).run(session.user.id, note.trim(), loadId);
+
+  logBatchEvent(db, loadId, 'rejected', session.user.email ?? null, note.trim());
 
   revalidatePath('/customer');
   revalidatePath('/admin');

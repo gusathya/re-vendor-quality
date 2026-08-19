@@ -3,6 +3,7 @@
 import { auth } from '@/lib/auth';
 import { getDb } from '@/lib/db/client';
 import { revalidatePath } from 'next/cache';
+import { logBatchEvent } from '@/lib/vendor-queries';
 
 export async function pushLoadReport(formData: FormData): Promise<void> {
   const session = await auth();
@@ -22,9 +23,12 @@ export async function pushLoadReport(formData: FormData): Promise<void> {
   if (load.vendor_id !== session.user.vendorId) return;
   if (load.push_status !== 'draft' && load.push_status !== 'rejected') return;
 
+  const isResubmit = load.push_status === 'rejected';
   db.prepare(
     "UPDATE load_reports SET push_status = 'pending', pushed_at = datetime('now'), push_note = ? WHERE id = ?",
   ).run(pushNote.trim(), loadId);
+
+  logBatchEvent(db, loadId, isResubmit ? 'resubmitted' : 'submitted', session.user.email ?? null, pushNote.trim());
 
   revalidatePath('/loads');
   revalidatePath('/customer');

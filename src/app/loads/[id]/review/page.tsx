@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { getDb } from '@/lib/db/client';
+import { getBatchEvents } from '@/lib/vendor-queries';
 import Link from 'next/link';
 
 interface BatchDetail {
@@ -99,6 +100,7 @@ export default async function BatchReviewDetailPage({
   const fails = scored.filter((r) => r.score === 'fail').length;
   const passRate = scored.length > 0 ? Math.round((passes / scored.length) * 100) : null;
 
+  const events = getBatchEvents(db, id);
   const backHref = role === 'vendor' ? '/loads' : '/customer';
 
   return (
@@ -275,6 +277,46 @@ export default async function BatchReviewDetailPage({
           </table>
         </div>
       </div>
+
+      {/* Audit trail — #16 */}
+      {events.length > 0 && (
+        <div className="card" style={{ marginTop: 24 }}>
+          <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 14, color: 'var(--color-text-heading)' }}>
+            Batch Activity Log
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {events.map((ev, i) => {
+              const iconMap: Record<string, { icon: string; color: string }> = {
+                uploaded:    { icon: '↑', color: '#6b7280' },
+                submitted:   { icon: '→', color: 'var(--color-navy-primary)' },
+                resubmitted: { icon: '↺', color: 'var(--color-warning)' },
+                approved:    { icon: '✓', color: 'var(--color-success)' },
+                rejected:    { icon: '✗', color: 'var(--color-danger)' },
+              };
+              const { icon, color } = iconMap[ev.eventType] ?? { icon: '·', color: '#9ca3af' };
+              return (
+                <div key={ev.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', paddingBottom: i < events.length - 1 ? 12 : 0, marginBottom: i < events.length - 1 ? 12 : 0, borderBottom: i < events.length - 1 ? '1px solid var(--color-card-border)' : 'none' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: `${color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color, flexShrink: 0 }}>
+                    {icon}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-heading)', textTransform: 'capitalize' }}>
+                      {ev.eventType}
+                      {ev.actorEmail && <span style={{ fontWeight: 400, color: '#6b7280' }}> by {ev.actorEmail}</span>}
+                    </div>
+                    {ev.note && (
+                      <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2, lineHeight: 1.5 }}>{ev.note}</div>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#9ca3af', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    {ev.createdAt.slice(0, 16)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </main>
   );
 }

@@ -56,6 +56,18 @@ export function createDb(filePath: string): Database.Database {
   // Vendor submission note (mandatory comment when submitting a batch to RE).
   try { db.exec('ALTER TABLE load_reports ADD COLUMN push_note TEXT'); } catch {}
 
+  // Audit trail for batch lifecycle events.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS batch_events (
+      id            TEXT PRIMARY KEY,
+      load_report_id TEXT NOT NULL REFERENCES load_reports(id) ON DELETE CASCADE,
+      event_type    TEXT NOT NULL,
+      actor_email   TEXT,
+      note          TEXT,
+      created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
   return db;
 }
 
