@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { getDb } from '@/lib/db/client';
+import { PrintButton } from '@/components/PrintButton';
 
 interface CertLoad {
   id: string;
@@ -74,24 +75,7 @@ export default async function CertificatePage({
           <a href="/loads" style={{ fontSize: 13, color: 'var(--color-nav-active-text)', textDecoration: 'none' }}>
             ← Back to My Batches
           </a>
-          <button
-            onClick={() => {}}
-            style={{
-              marginLeft: 'auto',
-              background: 'var(--color-navy-primary)',
-              color: 'white',
-              border: 'none',
-              borderRadius: 6,
-              padding: '8px 18px',
-              fontSize: 13,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            {...{ onClick: 'window.print()' } as any}
-          >
-            Save as PDF
-          </button>
+          <PrintButton />
         </div>
 
         <div className="cert-page" style={{

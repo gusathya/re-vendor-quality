@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "seed": "tsx scripts/seed.ts",
-    "seed:synthetic": "tsx scripts/synthetic-data.ts"
+    "seed:synthetic": "tsx scripts/synthetic-data.ts",
+    "seed:platers": "tsx scripts/seed-platers-year.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

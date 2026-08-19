@@ -7,6 +7,7 @@ import {
   getVendorMonthlyStationStats,
 } from '@/lib/vendor-queries';
 import Link from 'next/link';
+import { PrintButton } from '@/components/PrintButton';
 
 function StatusChip({ status }: { status: string }) {
   const cfg: Record<string, { bg: string; color: string; label: string }> = {
@@ -83,12 +84,7 @@ export default async function MonthlyScorecard({
             {!isCurrentMonth && (
               <Link href={`/vendor/scorecard?month=${nextMonth}`} style={{ fontSize: 13, color: 'var(--color-nav-active-text)', textDecoration: 'none', padding: '6px 12px', border: '1px solid var(--color-card-border)', borderRadius: 6 }}>Next ›</Link>
             )}
-            <button
-              style={{ background: 'var(--color-navy-primary)', color: 'white', border: 'none', borderRadius: 6, padding: '6px 16px', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
-              onClick={() => window.print()}
-            >
-              Save PDF
-            </button>
+            <PrintButton />
           </div>
         </div>
 
@@ -232,9 +228,6 @@ export default async function MonthlyScorecard({
         </div>
       </main>
 
-      <script dangerouslySetInnerHTML={{
-        __html: `document.querySelector('button')&&document.querySelector('button[style*="navy"]')&&document.querySelector('button[style*="navy"]').addEventListener('click',function(){window.print();});`,
-      }} />
     </>
   );
 }
