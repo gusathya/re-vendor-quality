@@ -114,39 +114,42 @@ export function getVendorStationFailStats(db: Database.Database, vendorId: strin
   }));
 }
 
-/* ── Batch pass-rate trend ── */
+/* ── Monthly pass-rate trend (aggregated by calendar month) ── */
 
-export interface BatchTrendPoint {
-  loadNumber: string;
-  uploadedAt: string;
-  pushStatus: string;
+export interface MonthlyTrendPoint {
+  month: string;       // YYYY-MM
+  monthLabel: string;  // "Aug '25"
+  batchCount: number;
+  avgPassRate: number;
   passes: number;
-  fails: number;
-  passRate: number;
+  total: number;
 }
 
-export function getVendorBatchTrend(db: Database.Database, vendorId: string): BatchTrendPoint[] {
+export function getVendorMonthlyTrend(db: Database.Database, vendorId: string): MonthlyTrendPoint[] {
   const rows = db
     .prepare(
       `SELECT
-         lr.load_number AS loadNumber,
-         lr.uploaded_at AS uploadedAt,
-         lr.push_status AS pushStatus,
-         SUM(CASE WHEN r.score = 'pass' THEN 1 ELSE 0 END)       AS passes,
-         SUM(CASE WHEN r.score = 'fail' THEN 1 ELSE 0 END)       AS fails,
-         COUNT(CASE WHEN r.score != 'unscored' THEN 1 END)        AS total
+         strftime('%Y-%m', lr.uploaded_at)               AS month,
+         COUNT(DISTINCT lr.id)                            AS batchCount,
+         SUM(CASE WHEN r.score = 'pass' THEN 1 ELSE 0 END) AS passes,
+         COUNT(CASE WHEN r.score != 'unscored' THEN 1 END)  AS total
        FROM load_reports lr
        LEFT JOIN load_readings r ON r.load_report_id = lr.id
        WHERE lr.vendor_id = ?
-       GROUP BY lr.id
-       ORDER BY lr.uploaded_at ASC`,
+       GROUP BY month
+       ORDER BY month ASC`,
     )
-    .all(vendorId) as (Omit<BatchTrendPoint, 'passRate'> & { total: number })[];
+    .all(vendorId) as { month: string; batchCount: number; passes: number; total: number }[];
 
-  return rows.map((r) => ({
-    ...r,
-    passRate: r.total > 0 ? Math.round((r.passes / r.total) * 100) : 0,
-  }));
+  return rows.map((r) => {
+    const [y, m] = r.month.split('-').map(Number);
+    const label = new Date(y, m - 1).toLocaleString('en-US', { month: 'short', year: '2-digit' });
+    return {
+      ...r,
+      monthLabel: label,
+      avgPassRate: r.total > 0 ? Math.round((r.passes / r.total) * 100) : 0,
+    };
+  });
 }
 
 /* ── Audit trail ── */

@@ -32,6 +32,16 @@ function StatusChip({ status }: { status: string }) {
   );
 }
 
+const PAGE_SIZE = 25;
+
+const STATUS_TABS = [
+  { key: 'all',      label: 'All' },
+  { key: 'pending',  label: 'Pending' },
+  { key: 'approved', label: 'Approved' },
+  { key: 'rejected', label: 'Rejected' },
+  { key: 'draft',    label: 'Draft' },
+] as const;
+
 export default async function LoadsPage({
   searchParams,
 }: {
@@ -46,11 +56,29 @@ export default async function LoadsPage({
   const resolvedParams = await searchParams;
   const submitId = typeof resolvedParams.submit === 'string' ? resolvedParams.submit : null;
   const viewRejectionId = typeof resolvedParams.rejectedLoad === 'string' ? resolvedParams.rejectedLoad : null;
+  const statusFilter = STATUS_TABS.some((t) => t.key === resolvedParams.status)
+    ? (resolvedParams.status as string)
+    : 'all';
+  const page = Math.max(1, parseInt(typeof resolvedParams.page === 'string' ? resolvedParams.page : '1') || 1);
 
   const db = getDb();
-  const loads = getVendorLoads(db, vendorId);
-  const rejectedLoad = viewRejectionId ? loads.find((l) => l.id === viewRejectionId) : null;
-  const submitLoad = submitId ? loads.find((l) => l.id === submitId) : null;
+  const allLoads = getVendorLoads(db, vendorId);
+
+  // Counts per status for tab badges
+  const counts = {
+    all:      allLoads.length,
+    pending:  allLoads.filter((l) => l.pushStatus === 'pending').length,
+    approved: allLoads.filter((l) => l.pushStatus === 'approved').length,
+    rejected: allLoads.filter((l) => l.pushStatus === 'rejected').length,
+    draft:    allLoads.filter((l) => l.pushStatus === 'draft').length,
+  } as Record<string, number>;
+
+  const filtered = statusFilter === 'all' ? allLoads : allLoads.filter((l) => l.pushStatus === statusFilter);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const loads = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const rejectedLoad = viewRejectionId ? allLoads.find((l) => l.id === viewRejectionId) : null;
+  const submitLoad = submitId ? allLoads.find((l) => l.id === submitId) : null;
   const resubmitDiff = submitLoad ? getResubmissionDiff(db, submitLoad.id, vendorId) : null;
 
   // Build draft rejection email if viewing a rejected load
@@ -74,7 +102,8 @@ export default async function LoadsPage({
 
   return (
     <main className="section">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <h1 style={{ margin: 0 }}><span className="accent-bar" />My Batches</h1>
         <Link
           href="/loads/new"
@@ -92,6 +121,67 @@ export default async function LoadsPage({
         >
           + Upload New Batch
         </Link>
+      </div>
+
+      {/* Status filter tabs */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 16, flexWrap: 'wrap' }}>
+        {STATUS_TABS.map((tab) => {
+          const active = tab.key === statusFilter;
+          const count = counts[tab.key];
+          const tabColors: Record<string, { active: string; badge: string }> = {
+            all:      { active: 'var(--color-navy-primary)', badge: '#1e3a5f' },
+            pending:  { active: '#92400e', badge: '#78350f' },
+            approved: { active: '#166534', badge: '#14532d' },
+            rejected: { active: '#991b1b', badge: '#7f1d1d' },
+            draft:    { active: '#374151', badge: '#1f2937' },
+          };
+          const col = tabColors[tab.key];
+          return (
+            <Link
+              key={tab.key}
+              href={`/loads?status=${tab.key}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 14px',
+                borderRadius: 20,
+                fontSize: 12,
+                fontWeight: active ? 700 : 400,
+                textDecoration: 'none',
+                background: active ? col.active : 'var(--color-card-bg)',
+                color: active ? 'white' : 'var(--color-text-body)',
+                border: active ? 'none' : '1px solid var(--color-card-border)',
+                transition: 'all 0.12s',
+              }}
+            >
+              {tab.label}
+              {count > 0 && (
+                <span style={{
+                  display: 'inline-block',
+                  minWidth: 18,
+                  height: 18,
+                  lineHeight: '18px',
+                  textAlign: 'center',
+                  borderRadius: 9,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  background: active ? 'rgba(255,255,255,0.25)' : 'var(--color-card-border)',
+                  color: active ? 'white' : 'var(--color-text-body)',
+                  padding: '0 4px',
+                }}>
+                  {count}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Row count */}
+      <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 10 }}>
+        Showing {filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length} batch{filtered.length !== 1 ? 'es' : ''}
+        {statusFilter !== 'all' && ` · filtered by ${statusFilter}`}
       </div>
 
       {/* Submit to RE modal */}
@@ -283,7 +373,14 @@ export default async function LoadsPage({
                     key={load.id}
                     style={{ opacity: load.pushStatus === 'draft' ? 0.85 : 1 }}
                   >
-                    <td><strong>{load.loadNumber}</strong></td>
+                    <td>
+                      <Link
+                        href={`/loads/${load.id}/review`}
+                        style={{ fontWeight: 700, color: 'var(--color-nav-active-text)', textDecoration: 'none', fontSize: 13 }}
+                      >
+                        {load.loadNumber}
+                      </Link>
+                    </td>
                     <td style={{ color: '#6b7280', fontSize: 12 }}>{load.partNumber ?? '—'}</td>
                     <td style={{ color: '#6b7280', fontSize: 12 }}>{load.uploadedAt.slice(0, 16)}</td>
                     <td style={{ textAlign: 'right' }}>{load.total}</td>
@@ -370,6 +467,46 @@ export default async function LoadsPage({
           </table>
         </div>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 16 }}>
+          {currentPage > 1 && (
+            <Link
+              href={`/loads?status=${statusFilter}&page=${currentPage - 1}`}
+              style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--color-card-border)', fontSize: 13, color: 'var(--color-text-body)', textDecoration: 'none' }}
+            >
+              ‹ Prev
+            </Link>
+          )}
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+            <Link
+              key={p}
+              href={`/loads?status=${statusFilter}&page=${p}`}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 6,
+                fontSize: 13,
+                textDecoration: 'none',
+                background: p === currentPage ? 'var(--color-navy-primary)' : 'transparent',
+                color: p === currentPage ? 'white' : 'var(--color-text-body)',
+                border: p === currentPage ? 'none' : '1px solid var(--color-card-border)',
+                fontWeight: p === currentPage ? 700 : 400,
+              }}
+            >
+              {p}
+            </Link>
+          ))}
+          {currentPage < totalPages && (
+            <Link
+              href={`/loads?status=${statusFilter}&page=${currentPage + 1}`}
+              style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid var(--color-card-border)', fontSize: 13, color: 'var(--color-text-body)', textDecoration: 'none' }}
+            >
+              Next ›
+            </Link>
+          )}
+        </div>
+      )}
 
       <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 12 }}>
         Draft batches are only visible to you. Submit a batch with comments to send it to Royal Enfield for approval.

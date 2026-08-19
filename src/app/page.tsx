@@ -6,7 +6,7 @@ import {
   getVendorBatchKpis,
   getVendorBestBatch,
   getVendorStationFailStats,
-  getVendorBatchTrend,
+  getVendorMonthlyTrend,
 } from '@/lib/vendor-queries';
 import { VendorBatchTrendChart } from '@/components/charts/VendorBatchTrendChart';
 
@@ -27,7 +27,7 @@ export default async function VendorDashboard() {
   const kpis = getVendorBatchKpis(db, vendorId);
   const bestBatch = getVendorBestBatch(db, vendorId);
   const stationFails = getVendorStationFailStats(db, vendorId);
-  const trendData = getVendorBatchTrend(db, vendorId);
+  const trendData = getVendorMonthlyTrend(db, vendorId);
 
   const passRatePct = Math.round(kpis.overallPassRate * 100);
   const passRateColor =
@@ -118,7 +118,7 @@ export default async function VendorDashboard() {
         {/* Pass rate trend */}
         <div className="card">
           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 14, color: 'var(--color-text-heading)' }}>
-            Pass Rate Trend — by Batch
+            Monthly Pass Rate Trend
           </div>
           <VendorBatchTrendChart data={trendData} />
         </div>
