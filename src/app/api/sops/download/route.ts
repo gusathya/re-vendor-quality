@@ -1,7 +1,14 @@
 import { auth } from '@/lib/auth';
 import { getDb } from '@/lib/db/client';
 import { getActiveSopParameters } from '@/lib/db/sop';
-import * as XLSX from 'xlsx';
+
+function escapeCSV(v: string | number | null | undefined): string {
+  if (v === null || v === undefined) return '';
+  const s = String(v);
+  return s.includes(',') || s.includes('"') || s.includes('\n')
+    ? `"${s.replace(/"/g, '""')}"`
+    : s;
+}
 
 export async function GET() {
   const session = await auth();
@@ -21,35 +28,24 @@ export async function GET() {
     .prepare('SELECT name, vendor_code FROM vendors WHERE id = ?')
     .get(vendorId) as { name: string; vendor_code: string | null } | undefined;
 
-  const rows = params.map((p) => ({
-    'Sr No': p.srNo,
-    'Station No': p.stationNo ?? '',
-    'Process': p.process,
-    'Product / Chemical': p.productChemical ?? '',
-    'Characteristic': p.characteristic ?? '',
-    'Min Value': p.minValue ?? '',
-    'Max Value': p.maxValue ?? '',
-    'Unit': p.unit ?? '',
-    'Control Limit': p.rawControlLimit ?? '',
-    'Spec Limit': p.rawSpecLimit ?? '',
-  }));
+  const headers = ['Sr No', 'Station No', 'Process', 'Product / Chemical', 'Characteristic', 'Min Value', 'Max Value', 'Unit', 'Control Limit', 'Spec Limit'];
 
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [
-    { wch: 8 }, { wch: 10 }, { wch: 22 }, { wch: 20 },
-    { wch: 20 }, { wch: 10 }, { wch: 10 }, { wch: 8 },
-    { wch: 16 }, { wch: 16 },
+  const lines = [
+    headers.map(escapeCSV).join(','),
+    ...params.map((p) =>
+      [p.srNo, p.stationNo, p.process, p.productChemical, p.characteristic, p.minValue, p.maxValue, p.unit, p.rawControlLimit, p.rawSpecLimit]
+        .map(escapeCSV)
+        .join(','),
+    ),
   ];
-  XLSX.utils.book_append_sheet(wb, ws, 'SOP Parameters');
 
-  const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+  const csv = lines.join('\r\n');
   const vendorSlug = (vendor?.name ?? 'vendor').replace(/[^a-zA-Z0-9]/g, '_');
-  const filename = `RE_SOP_${vendorSlug}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  const filename = `RE_SOP_${vendorSlug}_${new Date().toISOString().slice(0, 10)}.csv`;
 
-  return new Response(buffer, {
+  return new Response(csv, {
     headers: {
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Type': 'text/csv; charset=utf-8',
       'Content-Disposition': `attachment; filename="${filename}"`,
     },
   });
