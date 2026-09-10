@@ -224,3 +224,211 @@ label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 4px; c
 [data-theme="dark"] .badge-superseded { background: #21262d; color: #8b949e; }
 [data-theme="dark"] .badge-draft      { background: #1f3a5f; color: #79c0ff; }
 [data-theme="dark"] a                 { color: #79c0ff; }
+
+/* ── App chrome (desktop + mobile) ── */
+.app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+.app-shell__main { flex: 1; }
+
+.site-header {
+  background: linear-gradient(135deg, var(--color-navy-deep) 0%, var(--color-navy-primary) 100%);
+  color: white;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.site-header__brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.site-header__mark {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--color-red-accent);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Share Tech', monospace;
+  font-weight: 700; font-size: 14px; color: white;
+  flex-shrink: 0;
+}
+.site-header__title {
+  font-family: 'Share Tech', monospace;
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+.site-header__subtitle {
+  font-size: 10px;
+  color: rgba(255,255,255,0.55);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.site-header__tools { display: flex; align-items: center; gap: 8px; }
+
+.top-nav {
+  background: var(--color-card-bg);
+  border-bottom: 1px solid var(--color-card-border);
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 46px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.top-nav a {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--color-nav-link);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+.top-nav a:hover { text-decoration: none; }
+.top-nav a.active {
+  font-weight: 700;
+  color: var(--color-nav-active-text);
+  background: var(--color-nav-active-bg);
+  border-bottom-color: var(--color-nav-active-text);
+}
+.top-nav__session {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 12px;
+  border-left: 1px solid var(--color-card-border);
+}
+.top-nav__user { text-align: right; }
+.top-nav__email { font-size: 12px; font-weight: 600; color: var(--color-text-heading); line-height: 1.2; }
+.top-nav__role { font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; }
+.top-nav__signout {
+  background: none;
+  border: 1px solid var(--color-card-border);
+  border-radius: 6px;
+  padding: 5px 14px;
+  font-size: 12px;
+  color: var(--color-text-body);
+  cursor: pointer;
+  text-transform: none;
+  font-family: inherit;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.site-footer {
+  border-top: 3px solid var(--color-navy-primary);
+  padding: 14px 24px;
+  margin-top: 40px;
+  font-size: 11px;
+  color: #9ca3af;
+  background: var(--color-card-bg);
+  text-align: center;
+  letter-spacing: 0.03em;
+}
+
+.show-mobile { display: none !important; }
+
+.header-overflow { position: relative; }
+.header-overflow__toggle {
+  background: rgba(255,255,255,0.12);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.28);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 11px;
+}
+.header-overflow__menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  min-width: 12rem;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-card-border);
+  border-radius: 8px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  padding: 0.35rem 0;
+  box-shadow: 0 8px 24px rgba(20, 33, 61, 0.18);
+}
+.header-overflow__meta {
+  padding: 0.55rem 0.9rem 0.4rem;
+  font-size: 11px;
+  color: #6b7280;
+  border-bottom: 1px solid var(--color-card-border);
+  margin-bottom: 0.2rem;
+}
+.header-overflow__menu a,
+.header-overflow__menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0.65rem 0.9rem;
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-text-heading);
+  cursor: pointer;
+}
+.header-overflow__menu a:hover,
+.header-overflow__menu button:hover {
+  background: var(--color-bg-page);
+  text-decoration: none;
+}
+
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: var(--color-card-bg);
+  border-top: 1px solid var(--color-card-border);
+  padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom, 0px));
+}
+.bottom-nav a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  padding: 0.35rem 0.1rem;
+  font-family: 'Share Tech', monospace;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-nav-link);
+  text-decoration: none;
+}
+.bottom-nav a:hover { text-decoration: none; }
+.bottom-nav__dot { width: 5px; height: 5px; border-radius: 50%; background: transparent; }
+.bottom-nav a.active { color: var(--color-red-accent); font-weight: 700; }
+.bottom-nav a.active .bottom-nav__dot { background: var(--color-red-accent); }
+
+.filter-bar { flex-wrap: wrap; }
+
+@media (max-width: 768px) {
+  .hide-mobile { display: none !important; }
+  .show-mobile { display: flex !important; }
+  .header-overflow.show-mobile { display: block !important; }
+  .bottom-nav.show-mobile { display: grid !important; }
+
+  .app-shell__main { padding-bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px)); }
+  .site-header { padding: 0 14px; height: 54px; }
+  .site-header__subtitle { display: none; }
+  .section { padding: 18px 14px; }
+  .card, .chart-card { padding: 16px; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .site-footer {
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+    margin-top: 20px;
+  }
+}
