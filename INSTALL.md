@@ -74,9 +74,9 @@ This creates the following accounts:
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | `admin@leadership-fractal.local` | `Admin@123` |
-| Vendor | `vendor@unique-platers.local` | `Vendor@123` |
-| Customer | `customer@royalenfield.local` | `Customer@123` |
+| Admin | `admin@lf` | `admin123` |
+| Vendor | `vendor@lf` | `vendor123` |
+| Customer | `customer@lf` | `customer123` |
 
 > The seed script is idempotent — safe to run multiple times without duplicating data.
 

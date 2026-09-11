@@ -28,3 +28,15 @@ export function getUserByEmail(db: Database.Database, email: string): User | nul
     .get(email) as User | undefined;
   return row ?? null;
 }
+
+export function updateUserLogin(
+  db: Database.Database,
+  id: string,
+  input: { email: string; passwordHash: string },
+): void {
+  db.prepare('UPDATE users SET email = ?, password_hash = ? WHERE id = ?').run(
+    input.email,
+    input.passwordHash,
+    id,
+  );
+}

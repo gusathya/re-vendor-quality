@@ -182,7 +182,7 @@ Royal Enfield Quality Team
 ### Phase 2 — Customer role + push/approve/reject workflow
 - DB migrations: `push_status` + review columns on `load_reports`
 - Extend auth role CHECK
-- Seed: one Customer user (`customer@royalenfield.local` / `Customer@123`)
+- Seed: one Customer user (`customer@lf` / `customer123`)
 - Vendor load list: Push button + status chips
 - `/customer` portal: pending/approved/rejected batches + Approve/Reject
 - Rejection draft email modal
