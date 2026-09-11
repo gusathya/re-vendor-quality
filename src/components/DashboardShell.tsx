@@ -20,12 +20,12 @@ export function DashboardShell({
 
   return (
     <main className="section">
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
-        <h1 style={{ marginBottom: 0 }}>
+      <div className="page-head">
+        <h1>
           <span className="accent-bar" />
           Vendor Dashboard
           {vendor && (
-            <span style={{ fontSize: 12, fontWeight: 400, color: '#6b7280', marginLeft: 12, textTransform: 'none', letterSpacing: 0 }}>
+            <span style={{ fontSize: 12, fontWeight: 400, color: '#6b7280', marginLeft: 12, textTransform: 'none', letterSpacing: 0, display: 'block', marginTop: 6 }}>
               {vendor.name} — {vendor.processName}
             </span>
           )}
@@ -35,6 +35,7 @@ export function DashboardShell({
             href={vendor.folderUrl}
             target="_blank"
             rel="noopener noreferrer"
+            className="toolbar-link"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               padding: '7px 14px',
@@ -54,7 +55,6 @@ export function DashboardShell({
           </a>
         )}
       </div>
-      <div style={{ marginBottom: 20 }} />
       <KpiStrip kpis={kpis} />
       <DashboardTabs />
       {children}

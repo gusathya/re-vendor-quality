@@ -153,7 +153,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const overflowLinks = navLinks.slice(4);
 
   return (
-    <div className="app-shell">
+    <div className={isLoginPage ? "app-shell app-shell--login" : "app-shell"}>
       <header className="site-header">
         <div className="site-header__brand">
           <div className="site-header__mark">RE</div>
@@ -216,7 +216,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="app-shell__main">{children}</div>
 
       {!isLoginPage && (
-        <nav className="bottom-nav show-mobile" aria-label="Primary mobile">
+        <nav
+          className="bottom-nav show-mobile"
+          aria-label="Primary mobile"
+          style={{ gridTemplateColumns: `repeat(${bottomTabs.length}, minmax(0, 1fr))` }}
+        >
           {bottomTabs.map((tab) => {
             const active = isActivePath(pathname, tab.href);
             return (

@@ -29,9 +29,10 @@ export default async function ComparePage({
   return (
     <DashboardShell vendorId={vendorSession.vendorId}>
       <h2>Compare loads</h2>
-      <div className="split" style={{ display: 'flex', gap: 24 }}>
+      <div className="split-2" style={{ gap: 24 }}>
         <div>
           <h3>{loadA ?? 'No load selected'}</h3>
+          <div className="table-wrap">
           <table>
             <thead><tr><th>Station</th><th>Parameter</th><th>Value</th></tr></thead>
             <tbody>
@@ -42,9 +43,11 @@ export default async function ComparePage({
               ))}
             </tbody>
           </table>
+          </div>
         </div>
         <div>
           <h3>{loadB ?? 'No load selected'}</h3>
+          <div className="table-wrap">
           <table>
             <thead><tr><th>Station</th><th>Parameter</th><th>Value</th></tr></thead>
             <tbody>
@@ -55,6 +58,7 @@ export default async function ComparePage({
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </DashboardShell>

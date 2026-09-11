@@ -67,8 +67,8 @@ export default async function CustomerPage({
 
   return (
     <main className="section">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <h1 style={{ margin: 0 }}>
+      <div className="page-head">
+        <h1>
           <span className="accent-bar" />
           Royal Enfield — Batch Review Portal
         </h1>

@@ -17,12 +17,12 @@ export function DashboardTabs() {
   const query = searchParams.toString();
 
   return (
-    <nav style={{ display: 'flex', gap: 16, borderBottom: '2px solid var(--color-navy-primary)', marginBottom: 16 }}>
+    <nav className="tab-row" style={{ borderBottom: '2px solid var(--color-navy-primary)', gap: 16 }}>
       {TABS.map((tab) => (
         <Link
           key={tab.href}
           href={query ? `${tab.href}?${query}` : tab.href}
-          style={{ fontWeight: pathname === tab.href ? 700 : 400 }}
+          style={{ fontWeight: pathname === tab.href ? 700 : 400, padding: '8px 4px' }}
         >
           {tab.label}
         </Link>

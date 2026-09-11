@@ -76,9 +76,9 @@ export default async function MonthlyScorecard({
 
       <main className="section">
         {/* Nav */}
-        <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <div className="page-head no-print">
           <Link href="/" style={{ fontSize: 13, color: 'var(--color-nav-active-text)', textDecoration: 'none' }}>← Dashboard</Link>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div className="toolbar" style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <Link href={`/vendor/scorecard?month=${prevMonth}`} style={{ fontSize: 13, color: 'var(--color-nav-active-text)', textDecoration: 'none', padding: '6px 12px', border: '1px solid var(--color-card-border)', borderRadius: 6 }}>‹ Prev</Link>
             <span style={{ fontSize: 14, fontWeight: 700, minWidth: 160, textAlign: 'center', color: 'var(--color-text-heading)' }}>{monthLabel(month)}</span>
             {!isCurrentMonth && (
@@ -148,7 +148,7 @@ export default async function MonthlyScorecard({
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
+        <div className="split-2" style={{ marginBottom: 24 }}>
           {/* Batch list */}
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', fontWeight: 700, fontSize: 13, borderBottom: '1px solid var(--color-card-border)', color: 'var(--color-text-heading)' }}>

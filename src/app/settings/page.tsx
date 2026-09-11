@@ -57,7 +57,7 @@ export default async function SettingsPage() {
                   {vendor.name}
                   <span style={{ fontWeight: 400, fontSize: 12, color: '#9ca3af', marginLeft: 8 }}>{vendor.processName}</span>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div className="split-2" style={{ gap: 12, marginBottom: 12 }}>
                   <label>
                     Category
                     <select

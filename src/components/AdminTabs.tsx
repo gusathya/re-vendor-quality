@@ -15,18 +15,14 @@ export function AdminTabs() {
   const active = searchParams.get('tab') ?? 'overview';
 
   return (
-    <nav style={{
-      display: 'flex',
-      gap: 4,
-      borderBottom: '2px solid var(--color-red-accent)',
-      marginBottom: 24,
-    }}>
+    <nav className="tab-row" style={{ borderBottom: '2px solid var(--color-red-accent)', marginBottom: 24 }}>
       {TABS.map((tab) => {
         const isActive = active === tab.key;
         return (
           <Link
             key={tab.key}
             href={`/admin?tab=${tab.key}`}
+            className={isActive ? 'active' : undefined}
             style={{
               padding: '8px 18px',
               fontSize: 12,
@@ -40,7 +36,6 @@ export function AdminTabs() {
               marginBottom: -2,
               textDecoration: 'none',
               borderRadius: '6px 6px 0 0',
-              transition: 'all 0.12s',
             }}
           >
             {tab.label}

@@ -16,6 +16,7 @@ export default async function InspectionsPage() {
         Manual Check Log
       </h1>
       <Link href="/inspections/new">Log a new check</Link>
+      <div className="table-wrap" style={{ marginTop: 16 }}>
       <table>
         <thead>
           <tr>
@@ -34,6 +35,7 @@ export default async function InspectionsPage() {
           ))}
         </tbody>
       </table>
+      </div>
     </main>
   );
 }

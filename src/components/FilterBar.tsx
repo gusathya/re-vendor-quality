@@ -25,7 +25,7 @@ export function FilterBar() {
   }
 
   return (
-    <div className="filter-bar" style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+    <div className="filter-bar">
       <label>
         Result
         <select value={searchParams.get('result') ?? ''} onChange={(e) => setParam('result', e.target.value)}>

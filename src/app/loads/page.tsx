@@ -103,8 +103,8 @@ export default async function LoadsPage({
   return (
     <main className="section">
       {/* Header row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <h1 style={{ margin: 0 }}><span className="accent-bar" />My Batches</h1>
+      <div className="page-head">
+        <h1><span className="accent-bar" />My Batches</h1>
         <Link
           href="/loads/new"
           style={{
@@ -117,6 +117,8 @@ export default async function LoadsPage({
             textTransform: 'uppercase',
             letterSpacing: '0.06em',
             textDecoration: 'none',
+            display: 'inline-flex',
+            justifyContent: 'center',
           }}
         >
           + Upload New Batch
@@ -124,7 +126,7 @@ export default async function LoadsPage({
       </div>
 
       {/* Status filter tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 16, flexWrap: 'wrap' }}>
+      <div className="tab-row" style={{ marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
         {STATUS_TABS.map((tab) => {
           const active = tab.key === statusFilter;
           const count = counts[tab.key];

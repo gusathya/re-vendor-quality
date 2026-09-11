@@ -26,15 +26,15 @@ export default async function TrendsPage({
 
   return (
     <DashboardShell vendorId={vendorSession.vendorId}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+      <div className="page-head" style={{ marginBottom: 16 }}>
         <h2 style={{ margin: 0 }}>Parameter Trend</h2>
-        <form method="GET" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <form method="GET" className="toolbar">
           <label htmlFor="parameterName" style={{ margin: 0, fontSize: 12 }}>Parameter</label>
           <select
             id="parameterName"
             name="parameterName"
             defaultValue={parameterName}
-            style={{ width: 'auto', minWidth: 160 }}
+            style={{ width: 'auto', minWidth: 160, flex: '1 1 160px' }}
           >
             {availableParams.map((p) => (
               <option key={p} value={p}>{p}</option>

@@ -71,7 +71,7 @@ export default async function CertificatePage({
       `}</style>
 
       <main className="section">
-        <div className="no-print" style={{ marginBottom: 20, display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div className="page-head no-print">
           <a href="/loads" style={{ fontSize: 13, color: 'var(--color-nav-active-text)', textDecoration: 'none' }}>
             ← Back to My Batches
           </a>
@@ -133,7 +133,7 @@ export default async function CertificatePage({
           </div>
 
           {/* Details grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px', marginBottom: 28 }}>
+          <div className="split-2" style={{ gap: '12px 24px', marginBottom: 28 }}>
             {[
               ['Vendor', load.vendorCode ? `[${load.vendorCode}] ${load.vendorName}` : load.vendorName],
               ['Batch / Load #', load.loadNumber],
@@ -184,7 +184,7 @@ export default async function CertificatePage({
           </div>
 
           {/* Signature area */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, borderTop: '1px solid var(--color-card-border)', paddingTop: 24 }}>
+          <div className="split-2" style={{ gap: 24, borderTop: '1px solid var(--color-card-border)', paddingTop: 24 }}>
             <div>
               <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9ca3af', marginBottom: 24 }}>
                 Approved By

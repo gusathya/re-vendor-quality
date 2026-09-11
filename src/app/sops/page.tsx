@@ -30,7 +30,7 @@ export default async function SopsPage() {
         <span className="accent-bar" />
         SOP Library
       </h1>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+      <div className="toolbar" style={{ marginBottom: 16 }}>
         {role !== 'customer' && <Link href="/sops/new">Feed a new SOP</Link>}
         {role === 'vendor' && (
           <a href="/api/sops/download" style={{ fontSize: 13, color: 'var(--color-nav-active-text)', textDecoration: 'none', border: '1px solid var(--color-card-border)', borderRadius: 6, padding: '5px 14px' }}>

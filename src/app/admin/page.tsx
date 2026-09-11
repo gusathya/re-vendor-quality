@@ -59,12 +59,12 @@ export default async function AdminPage({
   return (
     <main className="section">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-        <h1 style={{ margin: 0 }}>
+      <div className="page-head">
+        <h1>
           <span className="accent-bar" />
           {session.user.role === 'admin' ? 'Admin Dashboard' : 'Analytics'}
         </h1>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="toolbar">
           <Link
             href="/customer"
             style={{
