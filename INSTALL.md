@@ -79,6 +79,8 @@ This creates the following accounts:
 | Customer | `customer@lf` | `customer123` |
 
 > The seed script is idempotent — safe to run multiple times without duplicating data.
+> On Railway, seed also runs at app startup so demo logins stay in sync after deploys.
+
 
 ---
 
