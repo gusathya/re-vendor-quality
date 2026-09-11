@@ -1,11 +1,10 @@
 // src/lib/seed.ts
-import bcrypt from 'bcryptjs';
 import type Database from 'better-sqlite3';
 import { createVendor, getVendorByName, updateVendorMeta, type Vendor } from './db/vendors';
-import { createUser, getUserByEmail, updateUserLogin } from './db/users';
 import { createStationAlias } from './db/station-aliases';
 import { createCategory, getCategoryBySlug } from './db/vendor-categories';
 import { KNOWN_UNIQUE_PLATERS_ALIASES } from './known-station-aliases';
+import { ensureDemoUsers } from './demo-users';
 
 export interface SeedResult {
   vendor: Vendor;
@@ -46,27 +45,7 @@ export async function seed(db: Database.Database): Promise<SeedResult> {
     vendor = getVendorByName(db, 'Unique Platers')!;
   }
 
-  await upsertDemoUser(db, {
-    email: 'admin@lf',
-    password: 'admin123',
-    role: 'admin',
-    vendorId: null,
-    previousEmails: ['admin@leadership-fractal.local'],
-  });
-  await upsertDemoUser(db, {
-    email: 'vendor@lf',
-    password: 'vendor123',
-    role: 'vendor',
-    vendorId: vendor.id,
-    previousEmails: ['vendor@unique-platers.local'],
-  });
-  await upsertDemoUser(db, {
-    email: 'customer@lf',
-    password: 'customer123',
-    role: 'customer',
-    vendorId: null,
-    previousEmails: ['customer@royalenfield.local'],
-  });
+  ensureDemoUsers(db);
 
   // KNOWN_UNIQUE_PLATERS_ALIASES uses a placeholder vendorId ('unique-platers') because the
   // real vendor id doesn't exist until seed time — substitute the real one here rather than
@@ -84,33 +63,4 @@ export async function seed(db: Database.Database): Promise<SeedResult> {
   }
 
   return { vendor, stationAliasCount };
-}
-
-async function upsertDemoUser(
-  db: Database.Database,
-  input: {
-    email: string;
-    password: string;
-    role: 'admin' | 'vendor' | 'customer';
-    vendorId: string | null;
-    previousEmails: string[];
-  },
-): Promise<void> {
-  const passwordHash = await bcrypt.hash(input.password, 10);
-  const existing =
-    getUserByEmail(db, input.email) ??
-    input.previousEmails.map((email) => getUserByEmail(db, email)).find(Boolean) ??
-    null;
-
-  if (existing) {
-    updateUserLogin(db, existing.id, { email: input.email, passwordHash });
-    return;
-  }
-
-  createUser(db, {
-    email: input.email,
-    passwordHash,
-    role: input.role,
-    vendorId: input.vendorId,
-  });
 }

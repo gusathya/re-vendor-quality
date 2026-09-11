@@ -24,8 +24,8 @@ export function createUser(
 
 export function getUserByEmail(db: Database.Database, email: string): User | null {
   const row = db
-    .prepare('SELECT id, email, password_hash AS passwordHash, role, vendor_id AS vendorId FROM users WHERE email = ?')
-    .get(email) as User | undefined;
+    .prepare('SELECT id, email, password_hash AS passwordHash, role, vendor_id AS vendorId FROM users WHERE email = ? COLLATE NOCASE')
+    .get(email.trim()) as User | undefined;
   return row ?? null;
 }
 

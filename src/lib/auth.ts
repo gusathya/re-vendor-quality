@@ -17,13 +17,14 @@ interface AuthorizedUser {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   session: { strategy: 'jwt' },
   pages: { signIn: '/login' },
   providers: [
     Credentials({
       credentials: { email: {}, password: {} },
       authorize: async (credentials) => {
-        const email = credentials?.email as string | undefined;
+        const email = (credentials?.email as string | undefined)?.trim().toLowerCase();
         const password = credentials?.password as string | undefined;
         if (!email || !password) return null;
 

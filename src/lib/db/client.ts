@@ -3,6 +3,7 @@ import Database from 'better-sqlite3';
 import { readFileSync } from 'node:fs';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
+import { ensureDemoUsers } from '../demo-users';
 
 // Resolved relative to process.cwd() (repo root) rather than __dirname, because this
 // app runs as a long-lived Node process launched from the repo root (`next start` or a
@@ -78,6 +79,7 @@ export function getDb(): Database.Database {
   if (!singleton) {
     const filePath = process.env.DATABASE_PATH ?? './data/vendor-quality.sqlite';
     singleton = createDb(filePath);
+    ensureDemoUsers(singleton);
   }
   return singleton;
 }
