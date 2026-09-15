@@ -552,3 +552,87 @@ label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 4px; c
   .app-shell__main { padding-bottom: 0 !important; }
   .split-2 { grid-template-columns: 1fr 1fr !important; }
 }
+
+/* ── MES Administration vision ── */
+.admin-vision { max-width: 960px; }
+.admin-vision-card { margin-bottom: 24px; }
+.admin-vision-card h2 { margin-bottom: 16px; }
+.company-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 16px;
+}
+.people-form-fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.admin-vision-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 16px;
+}
+.btn-compact {
+  height: 36px;
+  border-radius: 8px;
+  padding: 0 14px;
+  width: auto;
+}
+button.btn-ghost {
+  height: 32px;
+  background: transparent;
+  color: var(--color-navy-primary);
+  border: 1px solid var(--color-navy-primary);
+  border-radius: 6px;
+  padding: 0 12px;
+}
+button.btn-ghost:hover { opacity: 1; background: var(--color-nav-active-bg); }
+.admin-saved { font-size: 12px; color: #9ca3af; }
+.admin-form-error { font-size: 12px; color: var(--color-danger); }
+.admin-scroll { max-height: 420px; overflow: auto; margin-top: 4px; }
+.perm-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 4px;
+}
+button.perm-chip {
+  min-height: 36px;
+  min-width: 132px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-navy-primary);
+  border: 1px solid var(--color-navy-primary);
+  padding: 0 14px;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+}
+button.perm-chip.on {
+  background: var(--color-navy-primary);
+  color: #fff;
+}
+button.perm-chip:disabled { opacity: 0.55; cursor: default; }
+.perm-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.perm-pill {
+  display: inline-flex;
+  align-items: center;
+  background: var(--color-navy-primary);
+  color: #fff;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .company-form, .people-form-fields {
+    grid-template-columns: 1fr;
+  }
+}

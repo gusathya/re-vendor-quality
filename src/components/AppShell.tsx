@@ -8,25 +8,14 @@ import { ThemeToggle } from "./ThemeToggle";
 
 type NavLink = { href: string; label: string };
 
-const VENDOR_LINKS: NavLink[] = [
-  { href: "/", label: "Dashboard" },
-  { href: "/loads", label: "My Batches" },
-  { href: "/sops", label: "SOPs" },
-  { href: "/vendor/scorecard", label: "Monthly Report" },
-];
-
-const ADMIN_LINKS: NavLink[] = [
-  { href: "/admin", label: "Admin Dashboard" },
-  { href: "/customer", label: "RE Portal" },
-  { href: "/sops", label: "SOPs" },
-  { href: "/loads/new", label: "Upload Batch" },
-  { href: "/settings", label: "Settings" },
-];
-
-const CUSTOMER_LINKS: NavLink[] = [
-  { href: "/customer", label: "Batch Review" },
-  { href: "/sops", label: "SOPs" },
-  { href: "/admin", label: "Analytics" },
+const MES_LINKS: NavLink[] = [
+  { href: "/admin", label: "Administration" },
+  { href: "/production", label: "Production" },
+  { href: "/planning", label: "Planning" },
+  { href: "/reports", label: "Reports" },
+  { href: "/purchase", label: "Purchase" },
+  { href: "/inventory", label: "Inventory" },
+  { href: "/dispatch", label: "Dispatch" },
 ];
 
 function isActivePath(pathname: string, href: string): boolean {
@@ -34,11 +23,7 @@ function isActivePath(pathname: string, href: string): boolean {
 }
 
 function shortTabLabel(label: string): string {
-  if (label === "Admin Dashboard") return "Admin";
-  if (label === "Monthly Report") return "Report";
-  if (label === "My Batches") return "Batches";
-  if (label === "Batch Review") return "Review";
-  if (label === "Upload Batch") return "Upload";
+  if (label === "Administration") return "Admin";
   return label;
 }
 
@@ -143,12 +128,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       window.removeEventListener("beforeinstallprompt", onBeforeInstall);
   }, []);
 
-  const navLinks =
-    role === "admin"
-      ? ADMIN_LINKS
-      : role === "customer"
-        ? CUSTOMER_LINKS
-        : VENDOR_LINKS;
+  const navLinks = MES_LINKS;
   const bottomTabs = navLinks.slice(0, 4);
   const overflowLinks = navLinks.slice(4);
 
@@ -156,12 +136,10 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className={isLoginPage ? "app-shell app-shell--login" : "app-shell"}>
       <header className="site-header">
         <div className="site-header__brand">
-          <div className="site-header__mark">RE</div>
+          <div className="site-header__mark">EX</div>
           <div>
-            <div className="site-header__title">Royal Enfield</div>
-            <div className="site-header__subtitle">
-              Vendor Quality Dashboard
-            </div>
+            <div className="site-header__title">Exceedoo</div>
+            <div className="site-header__subtitle">Vendor MES</div>
           </div>
         </div>
         <div className="site-header__tools">
@@ -238,8 +216,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       <footer className="site-footer">
-        Royal Enfield Vendor Quality Dashboard &mdash; Powered by Leadership
-        Fractal
+        Exceedoo Vendor MES
       </footer>
     </div>
   );

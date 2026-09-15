@@ -4,14 +4,14 @@ import { AppShell } from "@/components/AppShell";
 import { Providers } from "@/components/Providers";
 
 export const metadata: Metadata = {
-  title: "Royal Enfield Vendor Quality",
+  title: "Exceedoo Vendor MES",
   description:
-    "SOP-driven quality analytics for Royal Enfield plating and heat treatment vendors.",
-  applicationName: "RE Quality",
+    "Hosted manufacturing execution for small and mid-size vendor plants.",
+  applicationName: "Exceedoo MES",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "RE Quality",
+    title: "Exceedoo MES",
   },
   formatDetection: {
     telephone: false,

@@ -28,7 +28,7 @@ export default function LoginPage() {
   return (
     <main className="login-page">
       <form onSubmit={handleSubmit} className="login-form">
-        <h1>Vendor Quality — Sign In</h1>
+        <h1>Vendor MES — Sign In</h1>
         {error && <p className="login-error">{error}</p>}
         <label>
           Email
